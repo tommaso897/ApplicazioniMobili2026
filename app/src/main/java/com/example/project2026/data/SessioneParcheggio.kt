@@ -1,16 +1,20 @@
 package com.example.project2026.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "sessioni_parcheggio")
 data class SessioneParcheggio(
-    val id: Int=0,
-    val idVeicolo: Int,
-    val tipo: TipoParcheggio,
-    val posizione: PosizioneSalvata,
-    val tipoParcheggio: TipoParcheggio,
-    val inizio: Long,
-    val fine: Long? = null,
-    val dataInizio: String,
-    val dataFine: String? = null,
-    val costo: Double? = null,
-    val note: String? = null,
-    val foto: String? = null
+    @PrimaryKey(autoGenerate = true)val id: Int=0,
+    @ColumnInfo(name = "idVeicolo")val idVeicolo: Int,
+    @ColumnInfo(name = "tipo")val tipo: TipoParcheggio,
+    @ColumnInfo(name = "posizione")val posizione: PosizioneSalvata,
+    @ColumnInfo(name = "inizio")val inizio: Long,
+    @ColumnInfo(name = "fine")val fine: Long? = null,
+    @ColumnInfo(name = "dataInizio")val dataInizio: String,
+    @ColumnInfo(name = "dataFine")val dataFine: String? = null,
+    @ColumnInfo(name = "costo")val costo: Double? = null,
+    @ColumnInfo(name = "note")val note: String? = null,
+    @ColumnInfo(name = "foto")val foto: String? = null
 )

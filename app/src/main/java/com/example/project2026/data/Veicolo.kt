@@ -1,7 +1,12 @@
 package com.example.project2026.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "veicoli")
 data class Veicolo(
-    val id: String,
-    val nome: Int=0,
-    val tipoVeicolo: TipoVeicolo
+    @PrimaryKey(autoGenerate = true)val id: Int=0,
+    @ColumnInfo(name = "nome")val nome: Int=0,
+    @ColumnInfo(name = "tipoVeicolo")val tipoVeicolo: TipoVeicolo
 )
