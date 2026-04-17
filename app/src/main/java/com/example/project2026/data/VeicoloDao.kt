@@ -1,6 +1,10 @@
 package com.example.project2026.data
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -12,7 +16,7 @@ interface VeicoloDao {
     fun ottieniTuttiIVeicoli(): Flow<List<Veicolo>> // Flow permette l'aggiornamento automatico della UI
 
     @Delete
-    suspend fun cancelloVeicolo(veicolo: Veicolo)
+    suspend fun cancellaVeicolo(veicolo: Veicolo)
 
     @Query("SELECT * FROM veicoli WHERE id = :id")
     suspend fun ottieniVeicoloPerId(id: Int): Veicolo?
