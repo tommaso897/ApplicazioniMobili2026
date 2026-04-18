@@ -7,6 +7,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "veicoli")
 data class Veicolo(
     @PrimaryKey(autoGenerate = true)val id: Int=0,
-    @ColumnInfo(name = "nome")val nome: Int=0,
+    @ColumnInfo(name = "nome")val nome: String="",
     @ColumnInfo(name = "tipoVeicolo")val tipoVeicolo: TipoVeicolo
 )

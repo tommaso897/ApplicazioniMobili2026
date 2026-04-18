@@ -19,7 +19,7 @@ class VeicoloViewModel(private val repository: Repository) : ViewModel() {
     )
 
     // Funzione per aggiungere un veicolo
-    fun aggingiNuovoVeicolo(nome: Int, tipo: TipoVeicolo) {
+    fun aggingiNuovoVeicolo(nome: String, tipo: TipoVeicolo) {
         val nuovoVeicolo = Veicolo(nome = nome, tipoVeicolo = tipo)
         viewModelScope.launch {
             repository.inserisciVeicolo(nuovoVeicolo)

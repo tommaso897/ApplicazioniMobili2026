@@ -61,5 +61,5 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.compose.ui:ui-tooling-preview:$compose_version")
     implementation("androidx.activity:activity-compose:1.8.2")
-
+    implementation("androidx.compose.material:material-icons-extended:1.6.4")
 }

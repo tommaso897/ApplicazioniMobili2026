@@ -1,6 +1,7 @@
 package com.example.project2026.data
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -9,10 +10,10 @@ data class SessioneParcheggio(
     @PrimaryKey(autoGenerate = true)val id: Int=0,
     @ColumnInfo(name = "idVeicolo")val idVeicolo: Int,
     @ColumnInfo(name = "tipo")val tipo: TipoParcheggio,
-    @ColumnInfo(name = "posizione")val posizione: PosizioneSalvata,
+    @Embedded(prefix = "pos_") val posizione: PosizioneSalvata? = null,
     @ColumnInfo(name = "inizio")val inizio: Long,
     @ColumnInfo(name = "fine")val fine: Long? = null,
-    @ColumnInfo(name = "dataInizio")val dataInizio: String,
+    @ColumnInfo(name = "dataInizio")val dataInizio: String="",
     @ColumnInfo(name = "dataFine")val dataFine: String? = null,
     @ColumnInfo(name = "costo")val costo: Double? = null,
     @ColumnInfo(name = "note")val note: String? = null,
