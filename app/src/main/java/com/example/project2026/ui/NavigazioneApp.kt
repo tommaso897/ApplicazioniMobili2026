@@ -1,6 +1,19 @@
 package com.example.project2026.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -9,44 +22,94 @@ import androidx.navigation.compose.rememberNavController
 import com.example.project2026.ParkMateApplication
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.example.project2026.viewmodel.VeicoloViewModelFactory
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.coroutines.launch
 
 // Importa qui le tue future schermate (che creeremo tra poco)
 
 @Composable
 fun NavigazioneApp() {
-    // Il NavController è l'oggetto che "guida" effettivamente l'app
     val navController = rememberNavController()
-
-    // Recuperiamo l'istanza dell'applicazione e il repository
     val context = LocalContext.current
     val app = context.applicationContext as ParkMateApplication
-
     val veicoloViewModel: VeicoloViewModel = viewModel(
         factory = VeicoloViewModelFactory(app.repository)
     )
-
-    NavHost(
-        navController = navController,
-        startDestination = Destinazione.ListaVeicoli.rotta // Schermata iniziale
-    ) {
-        // Qui definiamo cosa mostrare per ogni rotta
-        composable(Destinazione.ListaVeicoli.rotta) {
-            // Qui chiameremo la schermata che mostra la lista dei veicoli
-            ListaVeicoliScreen(
-                viewModel = veicoloViewModel,
-                onAggiungiClick = {
-                    navController.navigate(Destinazione.AggiungiVeicolo.rotta)
+    // Stato locale per la destinazione selezionata
+    val destinazioniPrincipali = listOf(
+        Destinazione.Mappa,
+        Destinazione.ListaVeicoli,
+        Destinazione.Cronologia,
+        Destinazione.Statistiche
+    )
+    val iconePrincipali = listOf(
+        Icons.Default.Map,
+        Icons.Default.DirectionsCar,
+        Icons.Default.History,
+        Icons.Default.BarChart
+    )
+    val etichettePrincipali = listOf(
+        "Mappa", "Garage", "History", "Stats"
+    )
+    // Ricava la destinazione attuale
+    val destinazioneCorrente = navController.currentBackStackEntry?.destination?.route
+    // Scaffold con bottom bar
+    Scaffold(
+        bottomBar = {
+            BarraNavigazioneInferiore(
+                destinazioneSelezionata = destinazioniPrincipali.find { it.rotta == destinazioneCorrente } ?: Destinazione.ListaVeicoli,
+                onDestinazioneClick = { destinazione ->
+                    navController.navigate(destinazione.rotta) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = Destinazione.ListaVeicoli.rotta,
+            modifier = Modifier.padding(padding)
+        ) {
+            // Qui definiamo cosa mostrare per ogni rotta
+            composable(Destinazione.ListaVeicoli.rotta) {
+                // Qui chiameremo la schermata che mostra la lista dei veicoli
+                ListaVeicoliScreen(
+                    viewModel = veicoloViewModel,
+                    onAggiungiClick = {
+                        navController.navigate(Destinazione.AggiungiVeicolo.rotta)
+                    }
+                )
+            }
 
-        composable(Destinazione.AggiungiVeicolo.rotta) {
-            // Qui passeremo alla prossima fase: il form di inserimento
-            AggiungiVeicoloScreen(onIndietro = { navController.popBackStack() })
-        }
+            composable(Destinazione.AggiungiVeicolo.rotta) {
+                // Qui passeremo alla prossima fase: il form di inserimento
+                AggiungiVeicoloScreen(onIndietro = { navController.popBackStack() })
+            }
 
-        composable(Destinazione.Mappa.rotta) {
-            // Futura schermata mappa
+            composable(Destinazione.Mappa.rotta) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Schermata Mappa")
+                }
+            }
+            composable(Destinazione.Cronologia.rotta) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Schermata History")
+                }
+            }
+            composable(Destinazione.Statistiche.rotta) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Schermata Stats")
+                }
+            }
         }
     }
 }

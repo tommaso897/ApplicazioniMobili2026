@@ -4,5 +4,6 @@ sealed class Destinazione(val rotta: String) {
     object ListaVeicoli : Destinazione("lista_veicoli")
     object AggiungiVeicolo : Destinazione("aggiungi_veicolo")
     object Mappa : Destinazione("mappa")
-    object Cronologia : Destinazione("cronologia")
+    object Cronologia : Destinazione("history")
+    object Statistiche : Destinazione("stats")
 }
