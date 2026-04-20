@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.project2026.ParkMateApplication
+import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.example.project2026.viewmodel.VeicoloViewModelFactory
 
@@ -37,46 +38,38 @@ fun NavigazioneApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val app = context.applicationContext as ParkMateApplication
+    
     val veicoloViewModel: VeicoloViewModel = viewModel(
         factory = VeicoloViewModelFactory(app.repository)
     )
-    // Stato locale per la destinazione selezionata
+    
+    // Inizializzazione del SessioneViewModel
+    val sessioneViewModel: SessioneViewModel = viewModel()
+
     val destinazioniPrincipali = listOf(
         Destinazione.Mappa,
         Destinazione.ListaVeicoli,
         Destinazione.Cronologia,
         Destinazione.Statistiche
     )
-    val iconePrincipali = listOf(
-        Icons.Default.Map,
-        Icons.Default.DirectionsCar,
-        Icons.Default.History,
-        Icons.Default.BarChart
-    )
-    val etichettePrincipali = listOf(
-        "Mappa", "Garage", "History", "Stats"
-    )
+    
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    // Ricava la destinazione attuale
     val destinazioneCorrente = navBackStackEntry?.destination?.route
-    // AGGIUNTA: Definizione del tema globale
+
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Color(0xFF3B82F6),   // Blu per le selezioni
-            background = Color.Black,      // Sfondo nero globale
-            surface = Color(0xFF121212),   // Superficie delle card
-            onBackground = Color.White,    // Testo bianco
-            onSurface = Color.White        // Testo su card bianco
+            primary = Color(0xFF3B82F6),
+            background = Color.Black,
+            surface = Color(0xFF121212),
+            onBackground = Color.White,
+            onSurface = Color.White
         ),
         typography = Typography(
             bodyLarge = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = FontFamily.SansSerif // O un font arrotondato se disponibile
+                fontFamily = FontFamily.SansSerif
             )
         )
     ) {
-        // Qui dentro ci deve essere il tuo Scaffold con il NavHost
-
-        // Scaffold con bottom bar
         Scaffold(
             bottomBar = {
                 BarraNavigazioneInferiore(
@@ -97,11 +90,10 @@ fun NavigazioneApp() {
                 startDestination = Destinazione.ListaVeicoli.rotta,
                 modifier = Modifier.padding(padding)
             ) {
-                // Qui definiamo cosa mostrare per ogni rotta
                 composable(Destinazione.ListaVeicoli.rotta) {
-                    // Qui chiameremo la schermata che mostra la lista dei veicoli
                     ListaVeicoliScreen(
                         viewModel = veicoloViewModel,
+                        sessioneViewModel = sessioneViewModel,
                         onAggiungiClick = {
                             navController.navigate(Destinazione.AggiungiVeicolo.rotta)
                         },
@@ -112,7 +104,6 @@ fun NavigazioneApp() {
                 }
 
                 composable(Destinazione.AggiungiVeicolo.rotta) {
-                    // Qui passeremo alla prossima fase: il form di inserimento
                     VeicoloFormScreen(
                         onIndietro = { navController.popBackStack() },
                         viewModel = veicoloViewModel
@@ -133,7 +124,6 @@ fun NavigazioneApp() {
                             veicolo = veicolo
                         )
                     } else {
-                        // Gestire caso veicolo non trovato, ma per ora box con testo
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text("Veicolo non trovato")
                         }
@@ -159,8 +149,3 @@ fun NavigazioneApp() {
         }
     }
 }
-    // Funzione temporanea solo per testare se la navigazione funziona
-    @Composable
-    fun SegnapostoSchermata(titolo: String, onAzione: () -> Unit) {
-        // In futuro qui ci sarà il codice vero delle tue pagine
-    }
