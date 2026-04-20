@@ -73,7 +73,7 @@ private fun BarraItem(
     selezionato: Boolean,
     onClick: () -> Unit
 ) {
-    val colore = if (selezionato) Color(0xFF3B82F6) else Color(0xFFB0B8C1)
+    val colore = if (selezionato) Color(0xFF4087FA) else Color(0xFFB0B8C1)
     androidx.compose.foundation.layout.Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
