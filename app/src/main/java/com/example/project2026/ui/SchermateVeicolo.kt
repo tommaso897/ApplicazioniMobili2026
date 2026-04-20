@@ -61,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project2026.data.StatoParcheggio
@@ -115,7 +116,6 @@ fun ListaVeicoliScreen(
         } else {
             LazyColumn(modifier = Modifier.padding(padding).fillMaxSize()) {
                 items(listaVeicoli) { veicolo ->
-                    // Controlliamo se il veicolo ha una sessione attiva
                     val sessioneAttiva = sessioniAttive.find { it.idVeicolo == veicolo.id }
                     
                     SchedaVeicolo(
@@ -127,7 +127,6 @@ fun ListaVeicoliScreen(
                                 veicoloSelezionato = it
                                 mostraBottomSheet = true
                             } else {
-                                // Se è già parcheggiato, cliccandoci lo liberiamo (o apriamo gestione)
                                 sessioneAttiva?.let { s -> sessioneViewModel.terminaParcheggio(s) }
                             }
                         }
@@ -209,7 +208,6 @@ fun SchermataGestioneParcheggio(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Campi dinamici in base alla selezione
         when (tipoSelezionato) {
             TipoParcheggio.PAID -> {
                 OutlinedTextField(
@@ -273,13 +271,22 @@ fun SchedaVeicolo(
     onIniziaParcheggio: (Veicolo) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp).clickable { onIniziaParcheggio(veicolo) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2E))
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onIniziaParcheggio(veicolo) },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E))
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Sezione Info (Icona + Testi) - Allineata a sinistra e centrata verticalmente
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val icona = when (veicolo.tipoVeicolo) {
@@ -288,34 +295,90 @@ fun SchedaVeicolo(
                     TipoVeicolo.BICICLETTA -> Icons.Default.DirectionsBike
                     TipoVeicolo.ALTRO -> Icons.Default.DirectionsCar
                 }
-                Icon(icona, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF2C2C2E)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icona, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                }
+                
                 Spacer(modifier = Modifier.width(16.dp))
+                
                 Column {
-                    Text(text = veicolo.nome, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                    Text(text = "Tipo: ${veicolo.tipoVeicolo}", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                    Text(
+                        text = veicolo.nome,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = veicolo.tipoVeicolo.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
 
                     val (sfondoStato, testoStato) = when (veicolo.statoParcheggio) {
-                        StatoParcheggio.LIBERO -> Pair(Color.DarkGray, "LIBERO")
-                        StatoParcheggio.PARCHEGGIATO -> Pair(Color(0xFF00AA00), "IN SOSTA")
+                        StatoParcheggio.LIBERO -> Pair(Color(0xFF3A3A3C), "LIBERO")
+                        StatoParcheggio.PARCHEGGIATO -> Pair(Color(0xFF28CD41).copy(alpha = 0.2f), "IN SOSTA")
                     }
+                    val coloreTestoStato = if (veicolo.statoParcheggio == StatoParcheggio.PARCHEGGIATO) Color(0xFF28CD41) else Color.White
 
                     Box(
-                        modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(4.dp)).background(sfondoStato).padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(sfondoStato)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = testoStato, style = MaterialTheme.typography.labelSmall, color = Color.White)
+                        Text(
+                            text = testoStato,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = coloreTestoStato
+                        )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Sezione Azioni (Modifica ed Elimina) - Allineata a destra e ben spaziata
             Row(
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp) // Spazio aumentato tra i bottoni
             ) {
-                IconButton(onClick = { onModificaClick(veicolo) }, modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(0xFFDAA520))) {
-                    Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = Color.White, modifier = Modifier.size(16.dp))
+                IconButton(
+                    onClick = { onModificaClick(veicolo) },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFDAA520)) // Sfondo Oro originale
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Modifica",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(0xFFFF7878))) {
-                    Icon(Icons.Default.Delete, contentDescription = "Elimina", tint = Color.White, modifier = Modifier.size(16.dp))
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFF7878)) // Sfondo Rosso/Rosa originale
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Elimina",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
