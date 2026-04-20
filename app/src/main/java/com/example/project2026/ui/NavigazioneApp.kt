@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,10 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.project2026.ParkMateApplication
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.example.project2026.viewmodel.VeicoloViewModelFactory
@@ -101,16 +104,40 @@ fun NavigazioneApp() {
                         viewModel = veicoloViewModel,
                         onAggiungiClick = {
                             navController.navigate(Destinazione.AggiungiVeicolo.rotta)
+                        },
+                        onModificaClick = { veicolo ->
+                            navController.navigate("modifica_veicolo/${veicolo.id}")
                         }
                     )
                 }
 
                 composable(Destinazione.AggiungiVeicolo.rotta) {
                     // Qui passeremo alla prossima fase: il form di inserimento
-                    AggiungiVeicoloScreen(
+                    VeicoloFormScreen(
                         onIndietro = { navController.popBackStack() },
                         viewModel = veicoloViewModel
                     )
+                }
+
+                composable(
+                    route = Destinazione.ModificaVeicolo.rotta,
+                    arguments = listOf(navArgument("veicoloId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val veicoloId = backStackEntry.arguments?.getInt("veicoloId")
+                    val veicoli by veicoloViewModel.listaVeicoli.collectAsState()
+                    val veicolo = veicoli.find { it.id == veicoloId }
+                    if (veicolo != null) {
+                        VeicoloFormScreen(
+                            onIndietro = { navController.popBackStack() },
+                            viewModel = veicoloViewModel,
+                            veicolo = veicolo
+                        )
+                    } else {
+                        // Gestire caso veicolo non trovato, ma per ora box con testo
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Veicolo non trovato")
+                        }
+                    }
                 }
 
                 composable(Destinazione.Mappa.rotta) {

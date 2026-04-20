@@ -11,6 +11,7 @@ class Repository(
     val tuttiIVeicoli: Flow<List<Veicolo>> = veicoloDao.ottieniTuttiIVeicoli()
     suspend fun inserisciVeicolo(veicolo: Veicolo)= veicoloDao.inserisciVeicolo(veicolo)
     suspend fun cancellaVeicolo(veicolo: Veicolo)= veicoloDao.cancellaVeicolo(veicolo)
+    suspend fun aggiornaVeicolo(veicolo: Veicolo)= veicoloDao.aggiornaVeicolo(veicolo)
     //Posizioni
     val tutteLePosizioni: Flow<List<PosizioneSalvata>> = posizioneDao.ottieniTutteLePosizioni()
     suspend fun inserisciPosizione(posizione: PosizioneSalvata)= posizioneDao.inserisciPosizione(posizione)

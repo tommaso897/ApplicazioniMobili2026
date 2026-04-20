@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,13 +54,14 @@ import com.example.project2026.data.TipoVeicolo
 import com.example.project2026.data.Veicolo
 import com.example.project2026.viewmodel.VeicoloViewModel
 import kotlinx.coroutines.launch
-
+import com.example.project2026.data.StatoParcheggio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaVeicoliScreen(
     viewModel: VeicoloViewModel,
-    onAggiungiClick: () -> Unit
+    onAggiungiClick: () -> Unit,
+    onModificaClick: (Veicolo) -> Unit
 ) {
     // 1. Osserviamo la lista dei veicoli che arriva dal database tramite il ViewModel
     val listaVeicoli by viewModel.listaVeicoli.collectAsState()
@@ -96,7 +98,8 @@ fun ListaVeicoliScreen(
                 items(listaVeicoli) { veicolo ->
                     SchedaVeicolo(
                         veicolo = veicolo,
-                        onDelete = { viewModel.eliminaVeicolo(veicolo) }
+                        onDelete = { viewModel.eliminaVeicolo(veicolo) },
+                        onModificaClick = onModificaClick
                     )
                 }
             }
@@ -105,7 +108,7 @@ fun ListaVeicoliScreen(
 }
 
 @Composable
-fun SchedaVeicolo(veicolo: Veicolo, onDelete: () -> Unit) {
+fun SchedaVeicolo(veicolo: Veicolo, onDelete: () -> Unit, onModificaClick: (Veicolo) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -127,22 +130,57 @@ fun SchedaVeicolo(veicolo: Veicolo, onDelete: () -> Unit) {
                 Column {
                     Text(text = veicolo.nome, style = MaterialTheme.typography.titleMedium)
                     Text(text = "Tipo: ${veicolo.tipoVeicolo}", style = MaterialTheme.typography.bodySmall)
+                    
+                    // Quadrato con stato di parcheggio
+                    val (sfondeStato, testoStato) = when (veicolo.statoParcheggio) {
+                        StatoParcheggio.LIBERO -> Pair(Color.Black, "LIBERO")
+                        StatoParcheggio.PARCHEGGIATO -> Pair(Color(0xFF00AA00), "PARCHEGGIATO") // Verde
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .background(sfondeStato)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = testoStato,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White
+                        )
+                    }
                 }
             }
-            // Pulsante di eliminazione in alto a destra
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF7878))
+            // Pulsanti in alto a destra
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Elimina veicolo",
-                    tint = Color.White
-                )
+                IconButton(
+                    onClick = { onModificaClick(veicolo) },
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color(0xFFDAA520))
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Modifica veicolo",
+                        tint = Color.White
+                    )
+                }
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color(0xFFFF7878))
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Elimina veicolo",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }
@@ -150,19 +188,21 @@ fun SchedaVeicolo(veicolo: Veicolo, onDelete: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AggiungiVeicoloScreen(
+fun VeicoloFormScreen(
     onIndietro: () -> Unit,
-    viewModel: VeicoloViewModel = viewModel() // Usiamo il viewModel per salvare
+    viewModel: VeicoloViewModel = viewModel(),
+    veicolo: Veicolo? = null
 ) {
-    var nome by remember { mutableStateOf("") }
-    var tipoSelezionato by remember { mutableStateOf(TipoVeicolo.AUTO) }
+    var nome by remember { mutableStateOf(veicolo?.nome ?: "") }
+    var tipoSelezionato by remember { mutableStateOf(veicolo?.tipoVeicolo ?: TipoVeicolo.AUTO) }
     var expanded by remember { mutableStateOf(false) } // Per il menu a tendina
     val scope = rememberCoroutineScope()
+    val isModifica = veicolo != null
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nuovo Veicolo") },
+                title = { Text(if (isModifica) "Modifica Veicolo" else "Nuovo Veicolo") },
                 navigationIcon = {
                     IconButton(onClick = onIndietro) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
@@ -224,7 +264,12 @@ fun AggiungiVeicoloScreen(
                 onClick = {
                     if (nome.isNotBlank()) {
                         scope.launch {
-                            viewModel.aggiungiNuovoVeicolo(nome, tipoSelezionato)
+                            if (isModifica) {
+                                val veicoloAggiornato = veicolo!!.copy(nome = nome, tipoVeicolo = tipoSelezionato)
+                                viewModel.modificaVeicolo(veicoloAggiornato)
+                            } else {
+                                viewModel.aggiungiNuovoVeicolo(nome, tipoSelezionato)
+                            }
                             onIndietro() // Torna alla lista dopo il salvataggio
                         }
                     }
@@ -232,7 +277,7 @@ fun AggiungiVeicoloScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = nome.isNotBlank()
             ) {
-                Text("Salva Veicolo")
+                Text(if (isModifica) "Salva Modifiche" else "Salva Veicolo")
             }
         }
     }

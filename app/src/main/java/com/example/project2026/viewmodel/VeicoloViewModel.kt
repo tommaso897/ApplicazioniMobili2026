@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.project2026.data.Repository
 import com.example.project2026.data.TipoVeicolo
 import com.example.project2026.data.Veicolo
+import com.example.project2026.data.StatoParcheggio
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -33,4 +34,18 @@ class VeicoloViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
+    // Funzione per modificare un veicolo
+    fun modificaVeicolo(veicolo: Veicolo) {
+        viewModelScope.launch {
+            repository.aggiornaVeicolo(veicolo)
+        }
+    }
+
+    // TODO: Implementare in futuro la funzione per cambiare lo stato di parcheggio
+    // fun cambiaStatoParcheggio(veicolo: Veicolo, nuovoStato: StatoParcheggio) {
+    //     viewModelScope.launch {
+    //         val veicoloAggiornato = veicolo.copy(statoParcheggio = nuovoStato)
+    //         repository.aggiornaVeicolo(veicoloAggiornato)
+    //     }
+    // }
 }

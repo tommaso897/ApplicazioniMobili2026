@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 // 1. Qui elenchiamo tutte le tabelle (Entity) del database
 @Database(
     entities = [Veicolo::class, PosizioneSalvata::class, SessioneParcheggio::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 // 2. Se abbiamo dei convertitori (es. per le date o gli enum), li mettiamo qui
