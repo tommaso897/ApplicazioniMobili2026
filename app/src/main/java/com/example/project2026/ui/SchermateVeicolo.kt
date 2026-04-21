@@ -1,5 +1,9 @@
 package com.example.project2026.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +53,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,14 +65,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project2026.data.StatoParcheggio
 import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.TipoVeicolo
 import com.example.project2026.data.Veicolo
+import com.example.project2026.utility.GestorePosizione
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
 import kotlinx.coroutines.launch
@@ -82,11 +90,30 @@ fun ListaVeicoliScreen(
 ) {
     val listaVeicoli by viewModel.listaVeicoli.collectAsState()
     val sessioniAttive by sessioneViewModel.sessioniAttive.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val gestorePosizione = remember { GestorePosizione(context) }
     
     var veicoloSelezionato by remember { mutableStateOf<Veicolo?>(null) }
     var mostraBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
+
+    // Stato per la posizione rilevata automaticamente
+    var latRilevata by remember { mutableStateOf<Double?>(null) }
+    var lngRilevata by remember { mutableStateOf<Double?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.entries.all { it.value }
+        if (granted) {
+            scope.launch {
+                val pos = gestorePosizione.ottieniPosizioneAttuale()
+                latRilevata = pos?.latitude
+                lngRilevata = pos?.longitude
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color.Black,
@@ -126,6 +153,25 @@ fun ListaVeicoliScreen(
                             if (veicolo.statoParcheggio == StatoParcheggio.LIBERO) {
                                 veicoloSelezionato = it
                                 mostraBottomSheet = true
+                                
+                                // Reset posizioni precedenti
+                                latRilevata = null
+                                lngRilevata = null
+
+                                // Controllo permessi e avvio rilevamento
+                                val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                                if (hasFineLocation) {
+                                    scope.launch {
+                                        val pos = gestorePosizione.ottieniPosizioneAttuale()
+                                        latRilevata = pos?.latitude
+                                        lngRilevata = pos?.longitude
+                                    }
+                                } else {
+                                    permissionLauncher.launch(arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    ))
+                                }
                             } else {
                                 sessioneAttiva?.let { s -> sessioneViewModel.terminaParcheggio(s) }
                             }
@@ -143,13 +189,17 @@ fun ListaVeicoliScreen(
             ) {
                 SchermataGestioneParcheggio(
                     veicolo = veicoloSelezionato!!,
-                    onConferma = { tipo, tariffa, scadenza, costo ->
+                    latIniziale = latRilevata,
+                    lngIniziale = lngRilevata,
+                    onConferma = { tipo, tariffa, scadenza, costo, lat, lng ->
                         sessioneViewModel.iniziaParcheggio(
                             veicolo = veicoloSelezionato!!,
                             tipo = tipo,
                             tariffa = tariffa,
                             scadenza = scadenza,
-                            costoIniziale = costo
+                            costoIniziale = costo,
+                            lat = lat,
+                            lng = lng
                         )
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             mostraBottomSheet = false
@@ -164,12 +214,24 @@ fun ListaVeicoliScreen(
 @Composable
 fun SchermataGestioneParcheggio(
     veicolo: Veicolo,
-    onConferma: (TipoParcheggio, Double?, Long?, Double?) -> Unit
+    latIniziale: Double?,
+    lngIniziale: Double?,
+    onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?) -> Unit
 ) {
     var tipoSelezionato by remember { mutableStateOf(TipoParcheggio.FREE) }
     var tariffaStr by remember { mutableStateOf("") }
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
+    
+    // Campi per la posizione manuale o pre-compilata
+    var latStr by remember { mutableStateOf(latIniziale?.toString() ?: "") }
+    var lngStr by remember { mutableStateOf(lngIniziale?.toString() ?: "") }
+
+    // Sincronizza se il GPS arriva dopo l'apertura
+    LaunchedEffect(latIniziale, lngIniziale) {
+        if (latStr.isEmpty()) latStr = latIniziale?.toString() ?: ""
+        if (lngStr.isEmpty()) lngStr = lngIniziale?.toString() ?: ""
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 32.dp),
@@ -208,6 +270,31 @@ fun SchermataGestioneParcheggio(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Sezione Posizione (Sempre visibile per inserimento manuale o conferma GPS)
+        Text("Posizione Parcheggio", style = MaterialTheme.typography.labelLarge, color = Color.White, modifier = Modifier.align(Alignment.Start))
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = latStr,
+                onValueChange = { latStr = it },
+                label = { Text("Latitudine") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            OutlinedTextField(
+                value = lngStr,
+                onValueChange = { lngStr = it },
+                label = { Text("Longitudine") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Campi dinamici in base alla selezione del tipo
         when (tipoSelezionato) {
             TipoParcheggio.PAID -> {
                 OutlinedTextField(
@@ -239,9 +326,7 @@ fun SchermataGestioneParcheggio(
                     )
                 }
             }
-            else -> {
-                Text("Registra posizione e orario di inizio.", color = Color.LightGray)
-            }
+            else -> {}
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -251,8 +336,10 @@ fun SchermataGestioneParcheggio(
                 val tariffa = tariffaStr.toDoubleOrNull()
                 val costo = costoStr.toDoubleOrNull()
                 val scadenzaMs = minutiScadenzaStr.toLongOrNull()?.let { System.currentTimeMillis() + (it * 60 * 1000) }
+                val lat = latStr.toDoubleOrNull()
+                val lng = lngStr.toDoubleOrNull()
                 
-                onConferma(tipoSelezionato, tariffa, scadenzaMs, costo)
+                onConferma(tipoSelezionato, tariffa, scadenzaMs, costo, lat, lng)
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
@@ -284,7 +371,6 @@ fun SchedaVeicolo(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Sezione Info (Icona + Testi) - Allineata a sinistra e centrata verticalmente
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
@@ -347,17 +433,16 @@ fun SchedaVeicolo(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Sezione Azioni (Modifica ed Elimina) - Allineata a destra e ben spaziata
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp) // Spazio aumentato tra i bottoni
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 IconButton(
                     onClick = { onModificaClick(veicolo) },
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFDAA520)) // Sfondo Oro originale
+                        .background(Color(0xFFDAA520))
                 ) {
                     Icon(
                         Icons.Default.Edit,
@@ -371,7 +456,7 @@ fun SchedaVeicolo(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFF7878)) // Sfondo Rosso/Rosa originale
+                        .background(Color(0xFFFF7878))
                 ) {
                     Icon(
                         Icons.Default.Delete,

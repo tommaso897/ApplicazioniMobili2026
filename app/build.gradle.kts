@@ -7,9 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.project2026"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.project2026"
@@ -52,14 +50,26 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    
+    // Room database
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
     kapt("androidx.room:room-compiler:$room_version")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    val compose_version = "1.6.4"
-    implementation("androidx.compose.ui:ui:$compose_version")
-    implementation("androidx.compose.material3:material3:1.2.1")
-    implementation("androidx.compose.ui:ui-tooling-preview:$compose_version")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.compose.material:material-icons-extended:1.6.4")
+    
+    // Navigazione
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+    
+    // Compose
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3:1.3.1")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.activity:activity-compose:1.10.0")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // GPS e Localizzazione
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    
+    // Google Maps per Compose
+    implementation("com.google.maps.android:maps-compose:6.2.1")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 }
