@@ -17,6 +17,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Project2026">
+
+        <!-- CHIAVE API GOOGLE MAPS -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyB3RqNaaq2EUd_el4MNmpW6BFxXFQU8934" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

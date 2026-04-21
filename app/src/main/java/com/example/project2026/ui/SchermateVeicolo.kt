@@ -78,6 +78,14 @@ import com.example.project2026.data.Veicolo
 import com.example.project2026.utility.GestorePosizione
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +106,6 @@ fun ListaVeicoliScreen(
     var mostraBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Stato per la posizione rilevata automaticamente
     var latRilevata by remember { mutableStateOf<Double?>(null) }
     var lngRilevata by remember { mutableStateOf<Double?>(null) }
 
@@ -154,11 +161,9 @@ fun ListaVeicoliScreen(
                                 veicoloSelezionato = it
                                 mostraBottomSheet = true
                                 
-                                // Reset posizioni precedenti
                                 latRilevata = null
                                 lngRilevata = null
 
-                                // Controllo permessi e avvio rilevamento
                                 val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                                 if (hasFineLocation) {
                                     scope.launch {
@@ -223,14 +228,21 @@ fun SchermataGestioneParcheggio(
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
     
-    // Campi per la posizione manuale o pre-compilata
-    var latStr by remember { mutableStateOf(latIniziale?.toString() ?: "") }
-    var lngStr by remember { mutableStateOf(lngIniziale?.toString() ?: "") }
+    // Stato per la posizione sulla mappa
+    var posizioneMappa by remember { 
+        mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
+    }
 
-    // Sincronizza se il GPS arriva dopo l'apertura
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(posizioneMappa, 15f)
+    }
+
+    // Aggiorna la mappa se il GPS arriva dopo
     LaunchedEffect(latIniziale, lngIniziale) {
-        if (latStr.isEmpty()) latStr = latIniziale?.toString() ?: ""
-        if (lngStr.isEmpty()) lngStr = lngIniziale?.toString() ?: ""
+        if (latIniziale != null && lngIniziale != null) {
+            posizioneMappa = LatLng(latIniziale, lngIniziale)
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(posizioneMappa, 15f)
+        }
     }
 
     Column(
@@ -241,7 +253,7 @@ fun SchermataGestioneParcheggio(
             text = "Inizia Parcheggio: ${veicolo.nome}",
             style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         Row(
@@ -268,33 +280,43 @@ fun SchermataGestioneParcheggio(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Sezione Posizione (Sempre visibile per inserimento manuale o conferma GPS)
-        Text("Posizione Parcheggio", style = MaterialTheme.typography.labelLarge, color = Color.White, modifier = Modifier.align(Alignment.Start))
+        // INTERFACCIA MAPPA
+        Text(
+            "Seleziona Posizione sulla Mappa", 
+            style = MaterialTheme.typography.labelLarge, 
+            color = Color.White, 
+            modifier = Modifier.align(Alignment.Start)
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = latStr,
-                onValueChange = { latStr = it },
-                label = { Text("Latitudine") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            )
-            OutlinedTextField(
-                value = lngStr,
-                onValueChange = { lngStr = it },
-                label = { Text("Longitudine") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.DarkGray)
+        ) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                onMapClick = { latLng ->
+                    posizioneMappa = latLng // L'utente sposta il punto cliccando
+                },
+                properties = MapProperties(isMyLocationEnabled = latIniziale != null),
+                uiSettings = MapUiSettings(zoomControlsEnabled = false)
+            ) {
+                Marker(
+                    state = MarkerState(position = posizioneMappa),
+                    title = "Posizione Parcheggio",
+                    draggable = true
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campi dinamici in base alla selezione del tipo
         when (tipoSelezionato) {
             TipoParcheggio.PAID -> {
                 OutlinedTextField(
@@ -329,17 +351,22 @@ fun SchermataGestioneParcheggio(
             else -> {}
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 val tariffa = tariffaStr.toDoubleOrNull()
                 val costo = costoStr.toDoubleOrNull()
                 val scadenzaMs = minutiScadenzaStr.toLongOrNull()?.let { System.currentTimeMillis() + (it * 60 * 1000) }
-                val lat = latStr.toDoubleOrNull()
-                val lng = lngStr.toDoubleOrNull()
                 
-                onConferma(tipoSelezionato, tariffa, scadenzaMs, costo, lat, lng)
+                onConferma(
+                    tipoSelezionato, 
+                    tariffa, 
+                    scadenzaMs, 
+                    costo, 
+                    posizioneMappa.latitude, 
+                    posizioneMappa.longitude
+                )
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
