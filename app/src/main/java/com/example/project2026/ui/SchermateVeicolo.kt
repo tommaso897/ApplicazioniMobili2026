@@ -38,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,9 +67,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project2026.data.StatoParcheggio
@@ -78,14 +81,16 @@ import com.example.project2026.data.Veicolo
 import com.example.project2026.utility.GestorePosizione
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,7 +193,10 @@ fun ListaVeicoliScreen(
 
         if (mostraBottomSheet && veicoloSelezionato != null) {
             ModalBottomSheet(
-                onDismissRequest = { mostraBottomSheet = false },
+                onDismissRequest = { 
+                    mostraBottomSheet = false
+                    veicoloSelezionato = null
+                },
                 sheetState = sheetState,
                 containerColor = Color(0xFF1C1C1E)
             ) {
@@ -208,6 +216,7 @@ fun ListaVeicoliScreen(
                         )
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             mostraBottomSheet = false
+                            veicoloSelezionato = null
                         }
                     }
                 )
@@ -228,21 +237,39 @@ fun SchermataGestioneParcheggio(
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
     
-    // Stato per la posizione sulla mappa
-    var posizioneMappa by remember { 
+    // Posizione attuale scelta dall'utente (inizialmente GPS o default Roma)
+    var posizioneScelta by remember { 
         mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
     }
 
+    // Camera state per la mappa
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(posizioneMappa, 15f)
+        position = CameraPosition.fromLatLngZoom(posizioneScelta, 15f)
     }
 
-    // Aggiorna la mappa se il GPS arriva dopo
+    // Marker state stabile
+    val markerState = rememberMarkerState(position = posizioneScelta)
+
+    // Ottimizzazione: Ritardiamo il caricamento della mappa per evitare ANR durante l'animazione del BottomSheet
+    var mappaPronta by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(600) // Tempo necessario affinché il bottom sheet si sia stabilizzato
+        mappaPronta = true
+    }
+
+    // Sincronizziamo se il GPS arriva dopo che abbiamo aperto la schermata
     LaunchedEffect(latIniziale, lngIniziale) {
         if (latIniziale != null && lngIniziale != null) {
-            posizioneMappa = LatLng(latIniziale, lngIniziale)
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(posizioneMappa, 15f)
+            val nuovaPos = LatLng(latIniziale, lngIniziale)
+            posizioneScelta = nuovaPos
+            markerState.position = nuovaPos
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(nuovaPos, 15f))
         }
+    }
+
+    // Sincronizziamo il marker se l'utente clicca sulla mappa
+    LaunchedEffect(posizioneScelta) {
+        markerState.position = posizioneScelta
     }
 
     Column(
@@ -250,9 +277,10 @@ fun SchermataGestioneParcheggio(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Inizia Parcheggio: ${veicolo.nome}",
+            text = "Parcheggio: ${veicolo.nome}",
             style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -280,43 +308,49 @@ fun SchermataGestioneParcheggio(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // INTERFACCIA MAPPA
-        Text(
-            "Seleziona Posizione sulla Mappa", 
-            style = MaterialTheme.typography.labelLarge, 
-            color = Color.White, 
-            modifier = Modifier.align(Alignment.Start)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        
+        // MAPPA INTERATTIVA CON CARICAMENTO RITARDATO
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(220.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color.DarkGray)
+                .background(Color(0xFF2C2C2E)),
+            contentAlignment = Alignment.Center
         ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                onMapClick = { latLng ->
-                    posizioneMappa = latLng // L'utente sposta il punto cliccando
-                },
-                properties = MapProperties(isMyLocationEnabled = latIniziale != null),
-                uiSettings = MapUiSettings(zoomControlsEnabled = false)
-            ) {
-                Marker(
-                    state = MarkerState(position = posizioneMappa),
-                    title = "Posizione Parcheggio",
-                    draggable = true
-                )
+            if (mappaPronta) {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    onMapClick = { latLng ->
+                        posizioneScelta = latLng
+                    },
+                    properties = remember(latIniziale) { 
+                        MapProperties(isMyLocationEnabled = latIniziale != null) 
+                    },
+                    uiSettings = remember { 
+                        MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false) 
+                    }
+                ) {
+                    Marker(
+                        state = markerState,
+                        title = "Punto di Sosta"
+                    )
+                }
+            } else {
+                // Placeholder durante il caricamento
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color.Yellow, modifier = Modifier.size(30.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Caricamento mappa...", color = Color.Gray, fontSize = 12.sp)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
+        // Campi dinamici basati sul tipo di parcheggio
         when (tipoSelezionato) {
             TipoParcheggio.PAID -> {
                 OutlinedTextField(
@@ -348,7 +382,9 @@ fun SchermataGestioneParcheggio(
                     )
                 }
             }
-            else -> {}
+            else -> {
+                Text("Registra la posizione e l'orario attuale.", color = Color.Gray, fontSize = 14.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -364,15 +400,15 @@ fun SchermataGestioneParcheggio(
                     tariffa, 
                     scadenzaMs, 
                     costo, 
-                    posizioneMappa.latitude, 
-                    posizioneMappa.longitude
+                    posizioneScelta.latitude, 
+                    posizioneScelta.longitude
                 )
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("CONFERMA PARCHEGGIO", style = MaterialTheme.typography.titleMedium)
+            Text("CONFERMA SOSTA", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
     }
 }
