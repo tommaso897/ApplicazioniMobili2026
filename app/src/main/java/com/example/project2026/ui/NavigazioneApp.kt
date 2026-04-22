@@ -7,7 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.project2026.ParkMateApplication
+import com.example.project2026.viewmodel.PosizioneSalvataViewModel
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.example.project2026.viewmodel.VeicoloViewModelFactory
@@ -43,11 +44,11 @@ fun NavigazioneApp() {
         factory = VeicoloViewModelFactory(app.repository)
     )
     
-    // Inizializzazione del SessioneViewModel
     val sessioneViewModel: SessioneViewModel = viewModel()
+    val posizioneSalvataViewModel: PosizioneSalvataViewModel = viewModel()
 
     val destinazioniPrincipali = listOf(
-        Destinazione.Mappa,
+        Destinazione.Home,
         Destinazione.ListaVeicoli,
         Destinazione.Cronologia,
         Destinazione.Statistiche
@@ -71,10 +72,17 @@ fun NavigazioneApp() {
         )
     ) {
         Scaffold(
+            topBar = {
+                BarraNavigazioneSuperiore(
+                    onPosizioniSalvateClick = {
+                        navController.navigate(Destinazione.PosizioniSalvate.rotta)
+                    }
+                )
+            },
             bottomBar = {
                 BarraNavigazioneInferiore(
                     destinazioneSelezionata = destinazioniPrincipali.find { it.rotta == destinazioneCorrente }
-                        ?: Destinazione.ListaVeicoli,
+                        ?: Destinazione.Home,
                     onDestinazioneClick = { destinazione ->
                         navController.navigate(destinazione.rotta) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -87,13 +95,22 @@ fun NavigazioneApp() {
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = Destinazione.ListaVeicoli.rotta,
+                startDestination = Destinazione.Home.rotta,
                 modifier = Modifier.padding(padding)
             ) {
+                composable(Destinazione.Home.rotta) {
+                    SchermataHome(
+                        sessioneViewModel = sessioneViewModel,
+                        veicoloViewModel = veicoloViewModel,
+                        posizioneSalvataViewModel = posizioneSalvataViewModel
+                    )
+                }
+
                 composable(Destinazione.ListaVeicoli.rotta) {
                     ListaVeicoliScreen(
                         viewModel = veicoloViewModel,
                         sessioneViewModel = sessioneViewModel,
+                        posizioneSalvataViewModel = posizioneSalvataViewModel,
                         onAggiungiClick = {
                             navController.navigate(Destinazione.AggiungiVeicolo.rotta)
                         },
@@ -130,19 +147,21 @@ fun NavigazioneApp() {
                     }
                 }
 
-                composable(Destinazione.Mappa.rotta) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Schermata Mappa")
-                    }
+                composable(Destinazione.PosizioniSalvate.rotta) {
+                    SchermataPosizioniSalvate(
+                        onIndietro = { navController.popBackStack() },
+                        viewModel = posizioneSalvataViewModel
+                    )
                 }
+
                 composable(Destinazione.Cronologia.rotta) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Schermata History")
+                        Text("Schermata History", color = Color.White)
                     }
                 }
                 composable(Destinazione.Statistiche.rotta) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Schermata Stats")
+                        Text("Schermata Stats", color = Color.White)
                     }
                 }
             }

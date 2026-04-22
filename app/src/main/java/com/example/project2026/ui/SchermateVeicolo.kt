@@ -42,6 +42,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,8 +52,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,11 +74,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.project2026.data.PosizioneSalvata
 import com.example.project2026.data.StatoParcheggio
 import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.TipoVeicolo
 import com.example.project2026.data.Veicolo
 import com.example.project2026.utility.GestorePosizione
+import com.example.project2026.viewmodel.PosizioneSalvataViewModel
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -98,11 +100,14 @@ import kotlinx.coroutines.launch
 fun ListaVeicoliScreen(
     viewModel: VeicoloViewModel,
     sessioneViewModel: SessioneViewModel,
+    posizioneSalvataViewModel: PosizioneSalvataViewModel,
     onAggiungiClick: () -> Unit,
     onModificaClick: (Veicolo) -> Unit
 ) {
     val listaVeicoli by viewModel.listaVeicoli.collectAsState()
     val sessioniAttive by sessioneViewModel.sessioniAttive.collectAsState()
+    val posizioniSalvate by posizioneSalvataViewModel.tutteLePosizioni.collectAsState()
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gestorePosizione = remember { GestorePosizione(context) }
@@ -129,12 +134,6 @@ fun ListaVeicoliScreen(
 
     Scaffold(
         containerColor = Color.Black,
-        topBar = {
-            TopAppBar(
-                title = { Text("Garage", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAggiungiClick,
@@ -204,6 +203,7 @@ fun ListaVeicoliScreen(
                     veicolo = veicoloSelezionato!!,
                     latIniziale = latRilevata,
                     lngIniziale = lngRilevata,
+                    posizioniSalvate = posizioniSalvate,
                     onConferma = { tipo, tariffa, scadenza, costo, lat, lng ->
                         sessioneViewModel.iniziaParcheggio(
                             veicolo = veicoloSelezionato!!,
@@ -225,11 +225,13 @@ fun ListaVeicoliScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchermataGestioneParcheggio(
     veicolo: Veicolo,
     latIniziale: Double?,
     lngIniziale: Double?,
+    posizioniSalvate: List<PosizioneSalvata>,
     onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?) -> Unit
 ) {
     var tipoSelezionato by remember { mutableStateOf(TipoParcheggio.FREE) }
@@ -237,27 +239,22 @@ fun SchermataGestioneParcheggio(
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
     
-    // Posizione attuale scelta dall'utente (inizialmente GPS o default Roma)
     var posizioneScelta by remember { 
         mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
     }
 
-    // Camera state per la mappa
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(posizioneScelta, 15f)
     }
 
-    // Marker state stabile
     val markerState = rememberMarkerState(position = posizioneScelta)
 
-    // Ottimizzazione: Ritardiamo il caricamento della mappa per evitare ANR durante l'animazione del BottomSheet
     var mappaPronta by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        delay(600) // Tempo necessario affinché il bottom sheet si sia stabilizzato
+        delay(600)
         mappaPronta = true
     }
 
-    // Sincronizziamo se il GPS arriva dopo che abbiamo aperto la schermata
     LaunchedEffect(latIniziale, lngIniziale) {
         if (latIniziale != null && lngIniziale != null) {
             val nuovaPos = LatLng(latIniziale, lngIniziale)
@@ -267,10 +264,12 @@ fun SchermataGestioneParcheggio(
         }
     }
 
-    // Sincronizziamo il marker se l'utente clicca sulla mappa
     LaunchedEffect(posizioneScelta) {
         markerState.position = posizioneScelta
     }
+
+    var expanded by remember { mutableStateOf(false) }
+    var posizioneSelezionataNome by remember { mutableStateOf("Seleziona posizione salvata") }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 32.dp),
@@ -310,11 +309,10 @@ fun SchermataGestioneParcheggio(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // MAPPA INTERATTIVA CON CARICAMENTO RITARDATO
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(200.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF2C2C2E)),
             contentAlignment = Alignment.Center
@@ -325,6 +323,7 @@ fun SchermataGestioneParcheggio(
                     cameraPositionState = cameraPositionState,
                     onMapClick = { latLng ->
                         posizioneScelta = latLng
+                        posizioneSelezionataNome = "Posizione personalizzata"
                     },
                     properties = remember(latIniziale) { 
                         MapProperties(isMyLocationEnabled = latIniziale != null) 
@@ -339,7 +338,6 @@ fun SchermataGestioneParcheggio(
                     )
                 }
             } else {
-                // Placeholder durante il caricamento
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color.Yellow, modifier = Modifier.size(30.dp))
                     Spacer(modifier = Modifier.height(8.dp))
@@ -348,9 +346,57 @@ fun SchermataGestioneParcheggio(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Campi dinamici basati sul tipo di parcheggio
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = posizioneSelezionataNome,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Posizioni Salvate") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedBorderColor = Color.Yellow
+                ),
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color(0xFF2C2C2E))
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Nessuna (usa mappa)", color = Color.White) },
+                    onClick = {
+                        posizioneSelezionataNome = "Nessuna (usa mappa)"
+                        expanded = false
+                    }
+                )
+                posizioniSalvate.forEach { pos ->
+                    DropdownMenuItem(
+                        text = { Text(pos.nome, color = Color.White) },
+                        onClick = {
+                            posizioneSelezionataNome = pos.nome
+                            posizioneScelta = LatLng(pos.latitudine, pos.longitudine)
+                            markerState.position = posizioneScelta
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         when (tipoSelezionato) {
             TipoParcheggio.PAID -> {
                 OutlinedTextField(
@@ -382,9 +428,7 @@ fun SchermataGestioneParcheggio(
                     )
                 }
             }
-            else -> {
-                Text("Registra la posizione e l'orario attuale.", color = Color.Gray, fontSize = 14.sp)
-            }
+            else -> {}
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -563,26 +607,32 @@ fun VeicoloFormScreen(
     val isModifica = veicolo != null
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isModifica) "Modifica Veicolo" else "Nuovo Veicolo") },
-                navigationIcon = {
-                    IconButton(onClick = onIndietro) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
-                    }
-                }
-            )
-        }
+        containerColor = Color.Black
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize(),
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            IconButton(onClick = onIndietro) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Indietro", tint = Color.White)
+            }
+
+            Text(
+                text = if (isModifica) "Modifica Veicolo" else "Nuovo Veicolo",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
             OutlinedTextField(
                 value = nome,
                 onValueChange = { nome = it },
                 label = { Text("Nome Veicolo (es. La mia Panda)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -596,7 +646,8 @@ fun VeicoloFormScreen(
                             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
                     TipoVeicolo.entries.forEach { tipo ->
@@ -621,10 +672,12 @@ fun VeicoloFormScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = nome.isNotBlank()
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = nome.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (isModifica) "Salva Modifiche" else "Salva Veicolo")
+                Text(if (isModifica) "Salva Modifiche" else "Salva Veicolo", style = MaterialTheme.typography.titleMedium)
             }
         }
     }

@@ -12,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,12 +35,12 @@ fun BarraNavigazioneInferiore(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Mappa
+        // Home
         BarraItem(
-            icona = Icons.Default.Map,
-            testo = "Mappa",
-            selezionato = destinazioneSelezionata is Destinazione.Mappa,
-            onClick = { onDestinazioneClick(Destinazione.Mappa) }
+            icona = Icons.Default.Home,
+            testo = "Home",
+            selezionato = destinazioneSelezionata is Destinazione.Home,
+            onClick = { onDestinazioneClick(Destinazione.Home) }
         )
         // Garage
         BarraItem(
@@ -85,4 +85,3 @@ private fun BarraItem(
         Text(testo, color = colore, style = MaterialTheme.typography.labelSmall)
     }
 }
-
