@@ -154,35 +154,29 @@ fun ListaVeicoliScreen(
         } else {
             LazyColumn(modifier = Modifier.padding(padding).fillMaxSize()) {
                 items(listaVeicoli) { veicolo ->
-                    val sessioneAttiva = sessioniAttive.find { it.idVeicolo == veicolo.id }
-                    
                     SchedaVeicolo(
                         veicolo = veicolo,
                         onDelete = { viewModel.eliminaVeicolo(veicolo) },
                         onModificaClick = onModificaClick,
                         onIniziaParcheggio = {
-                            if (veicolo.statoParcheggio == StatoParcheggio.LIBERO) {
-                                veicoloSelezionato = it
-                                mostraBottomSheet = true
-                                
-                                latRilevata = null
-                                lngRilevata = null
+                            veicoloSelezionato = it
+                            mostraBottomSheet = true
+                            
+                            latRilevata = null
+                            lngRilevata = null
 
-                                val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                if (hasFineLocation) {
-                                    scope.launch {
-                                        val pos = gestorePosizione.ottieniPosizioneAttuale()
-                                        latRilevata = pos?.latitude
-                                        lngRilevata = pos?.longitude
-                                    }
-                                } else {
-                                    permissionLauncher.launch(arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    ))
+                            val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                            if (hasFineLocation) {
+                                scope.launch {
+                                    val pos = gestorePosizione.ottieniPosizioneAttuale()
+                                    latRilevata = pos?.latitude
+                                    lngRilevata = pos?.longitude
                                 }
                             } else {
-                                sessioneAttiva?.let { s -> sessioneViewModel.terminaParcheggio(s) }
+                                permissionLauncher.launch(arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                ))
                             }
                         }
                     )
@@ -276,7 +270,7 @@ fun SchermataGestioneParcheggio(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Parcheggio: ${veicolo.nome}",
+            text = if (veicolo.statoParcheggio == StatoParcheggio.PARCHEGGIATO) "Nuova Sosta (Sovrascrivi)" else "Parcheggio: ${veicolo.nome}",
             style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
             fontWeight = FontWeight.Bold,
