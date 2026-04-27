@@ -50,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -198,7 +199,7 @@ fun ListaVeicoliScreen(
                     latIniziale = latRilevata,
                     lngIniziale = lngRilevata,
                     posizioniSalvate = posizioniSalvate,
-                    onConferma = { tipo, tariffa, scadenza, costo, lat, lng ->
+                    onConferma = { tipo, tariffa, scadenza, costo, lat, lng, note ->
                         sessioneViewModel.iniziaParcheggio(
                             veicolo = veicoloSelezionato!!,
                             tipo = tipo,
@@ -206,7 +207,8 @@ fun ListaVeicoliScreen(
                             scadenza = scadenza,
                             costoIniziale = costo,
                             lat = lat,
-                            lng = lng
+                            lng = lng,
+                            note = note
                         )
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             mostraBottomSheet = false
@@ -226,13 +228,14 @@ fun SchermataGestioneParcheggio(
     latIniziale: Double?,
     lngIniziale: Double?,
     posizioniSalvate: List<PosizioneSalvata>,
-    onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?) -> Unit
+    onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?,String?) -> Unit
 ) {
     var tipoSelezionato by remember { mutableStateOf(TipoParcheggio.FREE) }
     var tariffaStr by remember { mutableStateOf("") }
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
-    
+    var noteStr by remember { mutableStateOf("") }
+
     var posizioneScelta by remember { 
         mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
     }
@@ -426,7 +429,25 @@ fun SchermataGestioneParcheggio(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
+        OutlinedTextField(
+            value = noteStr,
+            onValueChange = { noteStr = it },
+            label = { Text("Note") },
+            placeholder = { Text("Opzionale", color = Color.Gray) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            minLines = 2,
+            maxLines = 4,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedTextColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedBorderColor = Color.Yellow,
+                unfocusedLabelColor = Color.Gray,
+                focusedLabelColor = Color.Yellow,
+                cursorColor = Color.Yellow
+            )
+        )
         Button(
             onClick = {
                 val tariffa = tariffaStr.toDoubleOrNull()
@@ -439,7 +460,8 @@ fun SchermataGestioneParcheggio(
                     scadenzaMs, 
                     costo, 
                     posizioneScelta.latitude, 
-                    posizioneScelta.longitude
+                    posizioneScelta.longitude,
+                    noteStr.trim().ifBlank { null }
                 )
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
