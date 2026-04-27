@@ -8,6 +8,7 @@ import com.example.project2026.data.SessioneParcheggio
 import com.example.project2026.data.StatoParcheggio
 import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.Veicolo
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -25,9 +26,23 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
     val sessioniAttive: StateFlow<List<SessioneParcheggio>> = _sessioniAttive
 
     init {
+        // Osserva le sessioni attive dal database
         viewModelScope.launch {
             sessioneDao.ottieniSessioniAttive().collect {
                 _sessioniAttive.value = it
+            }
+        }
+
+        // Funzione di monitoraggio automatico per scadenze Ticket
+        viewModelScope.launch {
+            while (true) {
+                val oraAttuale = System.currentTimeMillis()
+                _sessioniAttive.value.filter { it.tipo == TipoParcheggio.TICKET && it.scadenza != null }.forEach { sessione ->
+                    if (oraAttuale >= (sessione.scadenza ?: Long.MAX_VALUE)) {
+                        terminaParcheggio(sessione)
+                    }
+                }
+                delay(1000) // Controlla ogni secondo
             }
         }
     }

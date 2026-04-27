@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.AlertDialog
@@ -55,8 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -68,11 +71,14 @@ import com.example.project2026.viewmodel.PosizioneSalvataViewModel
 import com.example.project2026.viewmodel.SessioneViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -91,13 +97,13 @@ fun SchermataHome(
     
     val sessioniAttive by sessioneViewModel.sessioniAttive.collectAsState()
     val veicoli by veicoloViewModel.listaVeicoli.collectAsState()
+    val posizioniSalvate by posizioneSalvataViewModel.tutteLePosizioni.collectAsState()
     
     var cercaQuery by remember { mutableStateOf("") }
     var permessiConcessi by remember { 
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
     }
 
-    // Stati per il Pop-up di fine sosta
     var mostraPopUpTermina by remember { mutableStateOf(false) }
     var sessioneSelezionata by remember { mutableStateOf<SessioneParcheggio?>(null) }
     var costoCalcolatoFinale by remember { mutableStateOf(0.0) }
@@ -149,14 +155,33 @@ fun SchermataHome(
     Column(
         modifier = Modifier.fillMaxSize().background(Color.Black)
     ) {
-        // MAPPA
         Box(modifier = Modifier.fillMaxWidth().weight(0.45f)) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(isMyLocationEnabled = permessiConcessi),
                 uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = true)
-            )
+            ) {
+                posizioniSalvate.forEach { pos ->
+                    Marker(
+                        state = MarkerState(position = LatLng(pos.latitudine, pos.longitudine)),
+                        title = pos.nome,
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)
+                    )
+                }
+
+                sessioniAttive.forEach { sessione ->
+                    val veicolo = veicoli.find { it.id == sessione.idVeicolo }
+                    if (sessione.latitudine != null && sessione.longitudine != null) {
+                        Marker(
+                            state = MarkerState(position = LatLng(sessione.latitudine, sessione.longitudine)),
+                            title = veicolo?.nome ?: "Veicolo in sosta",
+                            snippet = "Sosta ${sessione.tipo.name}",
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = cercaQuery,
@@ -186,7 +211,6 @@ fun SchermataHome(
             )
         }
 
-        // LISTA SOSTE ATTIVE
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,7 +251,6 @@ fun SchermataHome(
         }
     }
 
-    // POP-UP DI FINE SOSTA
     if (mostraPopUpTermina && sessioneSelezionata != null) {
         PopUpFineSosta(
             costo = costoCalcolatoFinale,
@@ -239,7 +262,6 @@ fun SchermataHome(
                         lng = sessioneSelezionata!!.longitudine ?: 0.0
                     )
                 }
-                // Termina e cancella sosta
                 sessioneViewModel.terminaParcheggio(sessioneSelezionata!!)
                 mostraPopUpTermina = false
                 sessioneSelezionata = null
@@ -357,6 +379,23 @@ fun SchedaSostaAttiva(
                 Column {
                     Text(text = nomeVeicolo, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text(text = "Sosta ${sessione.tipo.name}", color = Color.Gray, fontSize = 11.sp)
+                }
+            }
+
+            // Visualizzazione NOTE se presenti
+            if (!sessione.note.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Notes, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = sessione.note,
+                        color = Color.LightGray,
+                        fontSize = 12.sp,
+                        fontStyle = FontStyle.Italic,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
