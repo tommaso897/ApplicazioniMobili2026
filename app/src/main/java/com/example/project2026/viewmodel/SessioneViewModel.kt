@@ -10,7 +10,9 @@ import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.Veicolo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -25,15 +27,21 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
     private val _sessioniAttive = MutableStateFlow<List<SessioneParcheggio>>(emptyList())
     val sessioniAttive: StateFlow<List<SessioneParcheggio>> = _sessioniAttive
 
+    // Flow per la cronologia delle sessioni terminate
+    val cronologiaTerminate: StateFlow<List<SessioneParcheggio>> = sessioneDao.ottieniCronologiaTerminate()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     init {
-        // Osserva le sessioni attive dal database
         viewModelScope.launch {
             sessioneDao.ottieniSessioniAttive().collect {
                 _sessioniAttive.value = it
             }
         }
 
-        // Funzione di monitoraggio automatico per scadenze Ticket
         viewModelScope.launch {
             while (true) {
                 val oraAttuale = System.currentTimeMillis()
@@ -42,7 +50,7 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                         terminaParcheggio(sessione)
                     }
                 }
-                delay(1000) // Controlla ogni secondo
+                delay(1000)
             }
         }
     }
@@ -55,16 +63,15 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
         costoIniziale: Double? = null,
         lat: Double? = null,
         lng: Double? = null,
-        note: String? = null
+        note: String? = null,
+        foto: String? = null
     ) {
         viewModelScope.launch {
             val timestampInizio = System.currentTimeMillis()
             val dataInizio = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY).format(Date(timestampInizio))
 
-            // 1. Chiudo eventuali sessioni precedenti per questo veicolo
             sessioneDao.terminaSessioneAttivaPerVeicolo(veicolo.id, timestampInizio, dataInizio)
 
-            // 2. Creo la nuova sessione
             val nuovaSessione = SessioneParcheggio(
                 idVeicolo = veicolo.id,
                 tipo = tipo,
@@ -76,12 +83,12 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                 latitudine = lat,
                 longitudine = lng,
                 note = note,
+                foto = foto,
                 stato = StatoParcheggio.PARCHEGGIATO,
                 attivo = true
             )
             sessioneDao.salvaSessione(nuovaSessione)
 
-            // 3. Aggiorno lo stato del veicolo
             val veicoloAggiornato = veicolo.copy(statoParcheggio = StatoParcheggio.PARCHEGGIATO)
             veicoloDao.aggiornaVeicolo(veicoloAggiornato)
         }
@@ -92,7 +99,6 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
             val timestampFine = System.currentTimeMillis()
             val dataFine = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY).format(Date(timestampFine))
 
-            // Calcolo costo se è di tipo PAID (orario)
             var costoFinale = sessione.costo ?: 0.0
             if (sessione.tipo == TipoParcheggio.PAID && sessione.tariffa != null) {
                 val oreTrascorse = (timestampFine - sessione.inizio) / (1000.0 * 60 * 60)
@@ -108,7 +114,6 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
             )
             sessioneDao.aggiornaSessione(sessioneTerminata)
 
-            // Aggiorno il veicolo riportandolo a LIBERO
             val veicolo = veicoloDao.ottieniVeicoloPerId(sessione.idVeicolo)
             veicolo?.let {
                 veicoloDao.aggiornaVeicolo(it.copy(statoParcheggio = StatoParcheggio.LIBERO))

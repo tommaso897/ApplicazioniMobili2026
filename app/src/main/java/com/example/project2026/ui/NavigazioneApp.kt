@@ -155,10 +155,12 @@ fun NavigazioneApp() {
                 }
 
                 composable(Destinazione.Cronologia.rotta) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Schermata History", color = Color.White)
-                    }
+                    SchermataHistory(
+                        sessioneViewModel = sessioneViewModel,
+                        veicoloViewModel = veicoloViewModel
+                    )
                 }
+                
                 composable(Destinazione.Statistiche.rotta) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Schermata Stats", color = Color.White)

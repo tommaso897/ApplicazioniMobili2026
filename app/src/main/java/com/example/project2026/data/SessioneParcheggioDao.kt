@@ -29,9 +29,13 @@ interface SessioneParcheggioDao {
     @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1")
     fun ottieniSessioniAttive(): Flow<List<SessioneParcheggio>>
 
-    // Cronologia ordinata
+    // Cronologia di tutte le sessioni (attive e non)
     @Query("SELECT * FROM sessioni_parcheggio ORDER BY inizio DESC")
     fun ottieniCronologia(): Flow<List<SessioneParcheggio>>
+
+    // Cronologia delle SOSTE TERMINATE (attivo = 0)
+    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 0 ORDER BY inizio DESC")
+    fun ottieniCronologiaTerminate(): Flow<List<SessioneParcheggio>>
 
     // Sessione attiva per determinato veicolo
     @Query("SELECT * FROM sessioni_parcheggio WHERE idVeicolo = :id AND attivo = 1 LIMIT 1")
