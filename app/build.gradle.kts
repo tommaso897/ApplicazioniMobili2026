@@ -75,7 +75,13 @@ dependencies {
     // GPS e Localizzazione
     implementation("com.google.android.gms:play-services-location:21.3.0")
     
-    // Google Maps per Compose
+    // Google Maps per Compose e Utilities (Heatmap)
     implementation("com.google.maps.android:maps-compose:6.2.1")
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.maps.android:android-maps-utils:3.8.2")
+    
+    // Vico per i Grafici (Chart)
+    implementation("com.patrykandpatrick.vico:compose:2.0.0-alpha.28")
+    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.28")
+    implementation("com.patrykandpatrick.vico:core:2.0.0-alpha.28")
 }

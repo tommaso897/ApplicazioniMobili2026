@@ -8,6 +8,10 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+// Classi di supporto per evitare errori di compilazione Room
+data class CoordinateHeatmap(val latitudine: Double, val longitudine: Double)
+data class SpesaVeicolo(val nome: String, val totale: Double)
+
 @Dao
 interface SessioneParcheggioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -25,30 +29,32 @@ interface SessioneParcheggioDao {
     @Query("SELECT * FROM sessioni_parcheggio WHERE id = :id")
     suspend fun ottieniSessionePerId(id: Int): SessioneParcheggio?
 
-    // Solo i veicoli attualmente parcheggiati (attivo = 1)
     @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1")
     fun ottieniSessioniAttive(): Flow<List<SessioneParcheggio>>
 
-    // Cronologia di tutte le sessioni (attive e non)
     @Query("SELECT * FROM sessioni_parcheggio ORDER BY inizio DESC")
     fun ottieniCronologia(): Flow<List<SessioneParcheggio>>
 
-    // Cronologia delle SOSTE TERMINATE (attivo = 0)
     @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 0 ORDER BY inizio DESC")
     fun ottieniCronologiaTerminate(): Flow<List<SessioneParcheggio>>
 
-    // Sessione attiva per determinato veicolo
     @Query("SELECT * FROM sessioni_parcheggio WHERE idVeicolo = :id AND attivo = 1 LIMIT 1")
     suspend fun ottieniSessioneAttivaPerVeicolo(id: Int): SessioneParcheggio?
 
-    // Termina la sessione attiva per un veicolo
     @Query("UPDATE sessioni_parcheggio SET fine = :timestampFine, dataFine = :dataFine, attivo = 0 WHERE idVeicolo = :idVeicolo AND attivo = 1")
     suspend fun terminaSessioneAttivaPerVeicolo(idVeicolo: Int, timestampFine: Long, dataFine: String)
 
-    // Filtrare per veicolo e intervallo di tempo
-    @Query(""" SELECT * FROM sessioni_parcheggio
-              WHERE idVeicolo = :id 
-              AND ((inizio >= :startTime AND inizio <= :endTime) 
-                   OR (fine IS NOT NULL AND fine >= :startTime AND fine <= :endTime))""")
-    fun ottieniSessioniPerVeicoloEIntervallo(id: Int, startTime: Long, endTime: Long): Flow<List<SessioneParcheggio>>
+    // Query per HEATMAP (usando la classe di supporto)
+    @Query("SELECT latitudine, longitudine FROM sessioni_parcheggio WHERE latitudine IS NOT NULL")
+    fun getCoordinatePerHeatMap(): Flow<List<CoordinateHeatmap>>
+
+    // Query per CHART COSTI (usando la classe di supporto e alias espliciti)
+    @Query("""
+        SELECT v.nome as nome, SUM(s.costo) as totale 
+        FROM sessioni_parcheggio s 
+        JOIN veicoli v ON s.idVeicolo = v.id 
+        WHERE s.costo IS NOT NULL
+        GROUP BY s.idVeicolo
+    """)
+    fun getSpesePerVeicolo(): Flow<List<SpesaVeicolo>>
 }

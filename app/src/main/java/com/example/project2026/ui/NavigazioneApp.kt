@@ -3,11 +3,6 @@ package com.example.project2026.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -161,10 +156,13 @@ fun NavigazioneApp() {
                     )
                 }
                 
-                composable(Destinazione.Statistiche.rotta) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Schermata Stats", color = Color.White)
-                    }
+
+
+                composable(Destinazione.Statistiche.rotta){
+                    SchermataStats(
+                        sessioneViewModel=sessioneViewModel,
+                        veicoloViewModel=veicoloViewModel
+                    )
                 }
             }
         }

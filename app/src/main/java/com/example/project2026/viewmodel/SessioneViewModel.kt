@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project2026.data.AppDatabase
+import com.example.project2026.data.CoordinateHeatmap
 import com.example.project2026.data.SessioneParcheggio
+import com.example.project2026.data.SpesaVeicolo
 import com.example.project2026.data.StatoParcheggio
 import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.Veicolo
@@ -29,6 +31,20 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
 
     // Flow per la cronologia delle sessioni terminate
     val cronologiaTerminate: StateFlow<List<SessioneParcheggio>> = sessioneDao.ottieniCronologiaTerminate()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val puntiHeatmap: StateFlow<List<CoordinateHeatmap>> = sessioneDao.getCoordinatePerHeatMap()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val statisticheSpese: StateFlow<List<SpesaVeicolo>> = sessioneDao.getSpesePerVeicolo()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
