@@ -133,6 +133,13 @@ fun ListaVeicoliScreen(
         }
     }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        // Se il permesso è concesso, la notifica sarà mostrata automaticamente
+        // Se negato, il parcheggio continua comunque ma senza notifiche
+    }
+
     Scaffold(
         containerColor = Color.Black,
         floatingActionButton = {
@@ -159,27 +166,35 @@ fun ListaVeicoliScreen(
                         veicolo = veicolo,
                         onDelete = { viewModel.eliminaVeicolo(veicolo) },
                         onModificaClick = onModificaClick,
-                        onIniziaParcheggio = {
-                            veicoloSelezionato = it
-                            mostraBottomSheet = true
-                            
-                            latRilevata = null
-                            lngRilevata = null
+                    onIniziaParcheggio = {
+                        veicoloSelezionato = it
+                        mostraBottomSheet = true
+                        
+                        latRilevata = null
+                        lngRilevata = null
 
-                            val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                            if (hasFineLocation) {
-                                scope.launch {
-                                    val pos = gestorePosizione.ottieniPosizioneAttuale()
-                                    latRilevata = pos?.latitude
-                                    lngRilevata = pos?.longitude
-                                }
-                            } else {
-                                permissionLauncher.launch(arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                ))
+                        // Richiedi il permesso per le notifiche
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                            val hasNotificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                            if (!hasNotificationPermission) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
                         }
+
+                        val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        if (hasFineLocation) {
+                            scope.launch {
+                                val pos = gestorePosizione.ottieniPosizioneAttuale()
+                                latRilevata = pos?.latitude
+                                lngRilevata = pos?.longitude
+                            }
+                        } else {
+                            permissionLauncher.launch(arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            ))
+                        }
+                    }
                     )
                 }
             }
