@@ -17,8 +17,8 @@ class NotificationDismissReceiver : BroadcastReceiver() {
         if (intent?.action == ACTION_NOTIFICA_DISMISSATA) {
             val sessionId = intent.getIntExtra(EXTRA_SESSION_ID, -1)
             if (sessionId != -1) {
-                // Memorizza il timestamp in cui è stata dismissata
-                val prefs = context?.getSharedPreferences("parking_notifications", Context.MODE_PRIVATE)
+                // Memorizza il timestamp in cui è stata dismissata - usa la stessa chiave del ViewModel
+                val prefs = context?.getSharedPreferences("sessione_parcheggio", Context.MODE_PRIVATE)
                 prefs?.edit()?.putLong("dismissed_$sessionId", System.currentTimeMillis())?.apply()
             }
         }
