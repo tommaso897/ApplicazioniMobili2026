@@ -238,6 +238,7 @@ fun SchermataHome(
                                 sessione = sessione,
                                 nomeVeicolo = veicolo.nome,
                                 tipoVeicolo = veicolo.tipoVeicolo,
+                                sessioneViewModel = sessioneViewModel,
                                 onTerminaClick = { costo ->
                                     costoCalcolatoFinale = costo
                                     sessioneSelezionata = sessione
@@ -339,9 +340,12 @@ fun SchedaSostaAttiva(
     sessione: SessioneParcheggio,
     nomeVeicolo: String,
     tipoVeicolo: TipoVeicolo,
+    sessioneViewModel: SessioneViewModel?,
     onTerminaClick: (Double) -> Unit
 ) {
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var mostraDialogAvviso by remember { mutableStateOf(false) }
+    
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
@@ -426,17 +430,117 @@ fun SchedaSostaAttiva(
                     }
                 }
 
-                Button(
-                    onClick = { onTerminaClick(costoAttuale) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF453A)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(34.dp)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.End
                 ) {
-                    Text("TERMINA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    // Bottone AVVISO - solo per TICKET
+                    if (sessione.tipo == TipoParcheggio.TICKET) {
+                        Button(
+                            onClick = { mostraDialogAvviso = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555555)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Text("AVVISO", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        }
+                    }
+                    
+                    // Bottone TERMINA
+                    Button(
+                        onClick = { onTerminaClick(costoAttuale) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF453A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(34.dp)
+                    ) {
+                        Text("TERMINA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
                 }
             }
         }
     }
+
+    // Dialog per impostare l'avviso
+    if (mostraDialogAvviso) {
+        DialogAvvisoNotifica(
+            sessione = sessione,
+            diff = diff,
+            sessioneViewModel = sessioneViewModel,
+            onConferma = { minuti ->
+                mostraDialogAvviso = false
+                sessioneViewModel?.programmaAvvisoScadenza(sessione.id, minuti)
+            },
+            onAnnulla = {
+                mostraDialogAvviso = false
+            }
+        )
+    }
+}
+
+@Composable
+fun DialogAvvisoNotifica(
+    sessione: SessioneParcheggio,
+    diff: Long,
+    sessioneViewModel: SessioneViewModel?,
+    onConferma: (Int) -> Unit,
+    onAnnulla: () -> Unit
+) {
+    var minutiAvviso by remember { mutableStateOf("") }
+    var currentTimeDialog by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            currentTimeDialog = System.currentTimeMillis()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onAnnulla,
+        containerColor = Color(0xFF1C1C1E),
+        title = {
+            Text("Imposta Avviso", color = Color.White, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "la sessione scadrà tra: ${formattaMillis(diff)}",
+                    color = Color.Cyan,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = minutiAvviso,
+                    onValueChange = { minutiAvviso = it.filter { c -> c.isDigit() } },
+                    label = { Text("Minuti prima della scadenza") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (minutiAvviso.isNotBlank()) {
+                        onConferma(minutiAvviso.toInt())
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow)
+            ) {
+                Text("CONFERMA", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnulla) {
+                Text("ANNULLA", color = Color.Gray)
+            }
+        }
+    )
 }
 
 fun formattaMillis(millis: Long): String {

@@ -24,6 +24,7 @@ class ParcheggioNotificationManager(
         private const val CHANNEL_NAME = "Sessioni di Parcheggio"
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_SCADENZA_ID = 1002
+        private const val NOTIFICATION_AVVISO_ID = 1003
     }
 
     init {
@@ -114,6 +115,38 @@ class ParcheggioNotificationManager(
             .build()
 
         notificationManager.notify(NOTIFICATION_SCADENZA_ID, notifica)
+    }
+
+    /**
+     * Mostra un avviso di scadenza imminente
+     */
+    fun mostraAvvisoScadenza(nomVeicolo: String, tempoRimanente: String) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            2,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notifica = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("⚠ Avviso Scadenza")
+            .setContentText("$nomVeicolo scadrà tra: $tempoRimanente")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("Il parcheggio di $nomVeicolo scadrà tra: $tempoRimanente")
+            )
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setShowWhen(true)
+            .build()
+
+        notificationManager.notify(NOTIFICATION_AVVISO_ID, notifica)
     }
 
     /**

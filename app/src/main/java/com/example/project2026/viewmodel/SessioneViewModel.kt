@@ -85,6 +85,15 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                         }
                     }
 
+                    // Controlla se deve mostrare avviso di scadenza
+                    if (deveMonstraAvvisoScadenza(sessione, oraAttuale)) {
+                        val veicolo = veicoloDao.ottieniVeicoloPerId(sessione.idVeicolo)
+                        veicolo?.let {
+                            val tempoRimanente = formattaTempoTrascorso((sessione.scadenza ?: 0L) - oraAttuale)
+                            parcheggioNotificationManager.mostraAvvisoScadenza(it.nome, tempoRimanente)
+                        }
+                    }
+
                     // Aggiorna notifica ogni 5 secondi ma SOLO dopo i primi 5 minuti E se non dismissata
                     if (sessione.attivo && !(sessione.tipo == TipoParcheggio.TICKET && sessione.scadenza != null && oraAttuale >= sessione.scadenza)) {
                         val minutiTrascorsi = (oraAttuale - sessione.inizio) / (1000 * 60)
@@ -238,5 +247,47 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
      */
     fun registraDismissioneNotifica(sessioneId: Int) {
         prefs.edit().putLong("dismissed_$sessioneId", System.currentTimeMillis()).apply()
+    }
+
+    /**
+     * Programma una notifica di avviso per X minuti prima della scadenza
+     */
+    fun programmaAvvisoScadenza(sessioneId: Int, minutiAvviso: Int) {
+        prefs.edit().putInt("avviso_minuti_$sessioneId", minutiAvviso).apply()
+    }
+
+    /**
+     * Verifica se l'avviso è stato programmato e calcola se è il momento di mostrarlo
+     */
+    private fun deveMonstraAvvisoScadenza(sessione: SessioneParcheggio, oraAttuale: Long): Boolean {
+        if (sessione.tipo != TipoParcheggio.TICKET || sessione.scadenza == null) return false
+
+        val minutiAvviso = prefs.getInt("avviso_minuti_${sessione.id}", -1)
+        if (minutiAvviso <= 0) return false
+
+        val tempoAvviso = sessione.scadenza - (minutiAvviso * 60 * 1000L)
+        val tempoFineAvviso = tempoAvviso + 30 * 1000L // Mostra per 30 secondi
+
+        return oraAttuale in tempoAvviso..tempoFineAvviso && !èNotificaAvvisoDismissata(sessione.id)
+    }
+
+    /**
+     * Verifica se la notifica di avviso è stata dismissata
+     */
+    private fun èNotificaAvvisoDismissata(sessioneId: Int): Boolean {
+        val dismissedTime = prefs.getLong("dismissed_avviso_$sessioneId", 0)
+        if (dismissedTime == 0L) return false
+
+        val timeSinceDismiss = System.currentTimeMillis() - dismissedTime
+        val oneMinute = 60 * 1000
+
+        return timeSinceDismiss < oneMinute
+    }
+
+    /**
+     * Registra che la notifica di avviso è stata dismissata
+     */
+    fun registraDismissioneAvviso(sessioneId: Int) {
+        prefs.edit().putLong("dismissed_avviso_$sessioneId", System.currentTimeMillis()).apply()
     }
 }
