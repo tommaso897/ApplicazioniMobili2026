@@ -30,6 +30,7 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
     private val veicoloDao = db.veicoloDao()
     private val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val parcheggioNotificationManager = ParcheggioNotificationManager(application, notificationManager)
+    private val prefs = application.getSharedPreferences("sessione_parcheggio", Context.MODE_PRIVATE)
 
     private val _sessioniAttive = MutableStateFlow<List<SessioneParcheggio>>(emptyList())
     val sessioniAttive: StateFlow<List<SessioneParcheggio>> = _sessioniAttive
@@ -230,5 +231,12 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
         val oneMinute = 60 * 1000
 
         return timeSinceDismiss < oneMinute
+    }
+
+    /**
+     * Registra che la notifica è stata dismissata
+     */
+    fun registraDismissioneNotifica(sessioneId: Int) {
+        prefs.edit().putLong("dismissed_$sessioneId", System.currentTimeMillis()).apply()
     }
 }

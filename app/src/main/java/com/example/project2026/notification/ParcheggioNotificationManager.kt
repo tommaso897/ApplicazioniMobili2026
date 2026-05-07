@@ -62,6 +62,7 @@ class ParcheggioNotificationManager(
         tipoVeicolo: String,
         tempoTrascorso: String,
         costoAccumulato: String?,
+        sessionId: Int = 0,
         vibrare: Boolean = false
     ) {
         val notifica = notificaBuilder()
@@ -69,6 +70,7 @@ class ParcheggioNotificationManager(
             .setTipoVeicolo(tipoVeicolo)
             .setTempoTrascorso(tempoTrascorso)
             .setCostoAccumulato(costoAccumulato)
+            .setSessionId(sessionId)
             .setVibrare(vibrare)
             .build()
 
@@ -126,12 +128,14 @@ class ParcheggioNotificationManager(
         private var tempoTrascorso: String = "00:00:00"
         private var costoAccumulato: String? = null
         private var vibrare: Boolean = false
+        private var sessionId: Int = 0
 
         fun setNomeVeicolo(nome: String) = apply { this.nomeVeicolo = nome }
         fun setTipoVeicolo(tipo: String) = apply { this.tipoVeicolo = tipo }
         fun setTempoTrascorso(tempo: String) = apply { this.tempoTrascorso = tempo }
         fun setCostoAccumulato(costo: String?) = apply { this.costoAccumulato = costo }
         fun setVibrare(vibra: Boolean) = apply { this.vibrare = vibra }
+        fun setSessionId(id: Int) = apply { this.sessionId = id }
 
         fun build(): Notification {
             val intent = Intent(context, MainActivity::class.java).apply {
