@@ -1,7 +1,10 @@
 package com.example.project2026.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsBike
@@ -34,6 +38,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.TwoWheeler
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -74,6 +79,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project2026.data.PosizioneSalvata
 import com.example.project2026.data.StatoParcheggio
@@ -95,6 +101,10 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,7 +224,7 @@ fun ListaVeicoliScreen(
                     latIniziale = latRilevata,
                     lngIniziale = lngRilevata,
                     posizioniSalvate = posizioniSalvate,
-                    onConferma = { tipo, tariffa, scadenza, costo, lat, lng, note ->
+                    onConferma = { tipo, tariffa, scadenza, costo, lat, lng, note, foto ->
                         sessioneViewModel.iniziaParcheggio(
                             veicolo = veicoloSelezionato!!,
                             tipo = tipo,
@@ -223,7 +233,8 @@ fun ListaVeicoliScreen(
                             costoIniziale = costo,
                             lat = lat,
                             lng = lng,
-                            note = note
+                            note = note,
+                            foto = foto
                         )
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             mostraBottomSheet = false
@@ -243,17 +254,21 @@ fun SchermataGestioneParcheggio(
     latIniziale: Double?,
     lngIniziale: Double?,
     posizioniSalvate: List<PosizioneSalvata>,
-    onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?,String?) -> Unit
+    onConferma: (TipoParcheggio, Double?, Long?, Double?, Double?, Double?,String?, String?) -> Unit
 ) {
     var tipoSelezionato by remember { mutableStateOf(TipoParcheggio.FREE) }
     var tariffaStr by remember { mutableStateOf("") }
     var costoStr by remember { mutableStateOf("") }
     var minutiScadenzaStr by remember { mutableStateOf("") }
     var noteStr by remember { mutableStateOf("") }
+    var fotoPath by remember { mutableStateOf<String?>(null) }
 
     var posizioneScelta by remember { 
         mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
     }
+
+    val context = LocalContext.current
+    var mostraDialogFoto by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(posizioneScelta, 15f)
@@ -282,6 +297,28 @@ fun SchermataGestioneParcheggio(
 
     var expanded by remember { mutableStateOf(false) }
     var posizioneSelezionataNome by remember { mutableStateOf("Seleziona posizione salvata") }
+
+    // Launcher per scattare una foto
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            // La foto è stata scattata con successo e il file è già salvato
+        }
+    }
+
+    // Launcher per il permesso della fotocamera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Crea un file per salvare la foto
+            val photoFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
+            val photoUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+            fotoPath = photoFile.absolutePath
+            takePictureLauncher.launch(photoUri)
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 32.dp),
@@ -463,6 +500,25 @@ fun SchermataGestioneParcheggio(
                 cursorColor = Color.Yellow
             )
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Bottone FOTO
+        Button(
+            onClick = {
+                mostraDialogFoto = true
+            },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray, contentColor = Color.White),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Camera, contentDescription = "Foto", modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("FOTO", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Button(
             onClick = {
                 val tariffa = tariffaStr.toDoubleOrNull()
@@ -476,7 +532,8 @@ fun SchermataGestioneParcheggio(
                     costo, 
                     posizioneScelta.latitude, 
                     posizioneScelta.longitude,
-                    noteStr.trim().ifBlank { null }
+                    noteStr.trim().ifBlank { null },
+                    fotoPath
                 )
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -485,6 +542,47 @@ fun SchermataGestioneParcheggio(
         ) {
             Text("CONFERMA SOSTA", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
+    }
+
+    // Dialog di conferma per la foto
+    if (mostraDialogFoto) {
+        AlertDialog(
+            onDismissRequest = { mostraDialogFoto = false },
+            title = { Text("Foto") },
+            text = { Text("Vuoi aggiungere una foto?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostraDialogFoto = false
+                        // Controlla il permesso della fotocamera
+                        val hasCameraPermission = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (hasCameraPermission) {
+                            // Crea un file per salvare la foto
+                            val photoFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
+                            val photoUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                            fotoPath = photoFile.absolutePath
+                            takePictureLauncher.launch(photoUri)
+                        } else {
+                            // Richiedi il permesso
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
+                ) {
+                    Text("Si")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { mostraDialogFoto = false }
+                ) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 

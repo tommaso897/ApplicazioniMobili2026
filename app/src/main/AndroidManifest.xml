@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Permessi per la vibrazione -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Permessi per la fotocamera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name=".ParkMateApplication"
@@ -45,6 +48,17 @@
                 <action android:name="com.example.project2026.NOTIFICA_DISMISSATA" />
             </intent-filter>
         </receiver>
+
+        <!-- FileProvider per le foto della fotocamera -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/fileprovider" />
+        </provider>
     </application>
 
 </manifest>
