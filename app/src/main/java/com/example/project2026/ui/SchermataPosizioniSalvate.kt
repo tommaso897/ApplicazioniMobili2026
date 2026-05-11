@@ -279,7 +279,7 @@ fun SchedaPosizione(posizione: PosizioneSalvata, onDelete: () -> Unit, onEdit: (
             }
 
             // Pulsanti Azione (Modifica e Elimina)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 IconButton(
                     onClick = onEdit,
                     modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFFDAA520))

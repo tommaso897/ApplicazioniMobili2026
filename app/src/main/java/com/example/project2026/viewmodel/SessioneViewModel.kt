@@ -17,9 +17,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -53,12 +55,30 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
             initialValue = emptyList()
         )
 
-    val statisticheSpese: StateFlow<List<SpesaVeicolo>> = sessioneDao.getSpesePerVeicolo()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+     val statisticheSpese: StateFlow<List<SpesaVeicolo>> = sessioneDao.getSpesePerVeicolo()
+         .stateIn(
+             scope = viewModelScope,
+             started = SharingStarted.WhileSubscribed(5000),
+             initialValue = emptyList()
+         )
+
+     // MutableStateFlow per i filtri data
+     private val _dataInizio = MutableStateFlow(getDataInizioPredefinita())
+     val dataInizio: StateFlow<Long> = _dataInizio
+
+     private val _dataFine = MutableStateFlow(getDataFinePredefinita())
+     val dataFine: StateFlow<Long> = _dataFine
+
+     // StateFlow per le spese filtrate per data
+     val statisticheSpeseFiltratePerData: StateFlow<List<SpesaVeicolo>> = _dataInizio.flatMapLatest { inizio ->
+         _dataFine.flatMapLatest { fine ->
+             sessioneDao.getSpesePerVeicoloFiltratoPerData(inizio, fine)
+         }
+     }.stateIn(
+         scope = viewModelScope,
+         started = SharingStarted.WhileSubscribed(5000),
+         initialValue = emptyList()
+     )
 
     init {
         viewModelScope.launch {
@@ -284,10 +304,48 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
         return timeSinceDismiss < oneMinute
     }
 
-    /**
-     * Registra che la notifica di avviso è stata dismissata
-     */
-    fun registraDismissioneAvviso(sessioneId: Int) {
-        prefs.edit().putLong("dismissed_avviso_$sessioneId", System.currentTimeMillis()).apply()
-    }
+     /**
+      * Registra che la notifica di avviso è stata dismissata
+      */
+     fun registraDismissioneAvviso(sessioneId: Int) {
+         prefs.edit().putLong("dismissed_avviso_$sessioneId", System.currentTimeMillis()).apply()
+     }
+
+     /**
+      * Imposta la data di inizio del filtro
+      */
+     fun setDataInizio(timestamp: Long) {
+         _dataInizio.value = timestamp
+     }
+
+     /**
+      * Imposta la data di fine del filtro
+      */
+     fun setDataFine(timestamp: Long) {
+         _dataFine.value = timestamp
+     }
+
+     /**
+      * Ritorna il timestamp dell'inizio di oggi (predefinito)
+      */
+     private fun getDataInizioPredefinita(): Long {
+         val calendar = Calendar.getInstance()
+         calendar.set(Calendar.HOUR_OF_DAY, 0)
+         calendar.set(Calendar.MINUTE, 0)
+         calendar.set(Calendar.SECOND, 0)
+         calendar.set(Calendar.MILLISECOND, 0)
+         return calendar.timeInMillis
+     }
+
+     /**
+      * Ritorna il timestamp della fine di oggi (predefinito)
+      */
+     private fun getDataFinePredefinita(): Long {
+         val calendar = Calendar.getInstance()
+         calendar.set(Calendar.HOUR_OF_DAY, 23)
+         calendar.set(Calendar.MINUTE, 59)
+         calendar.set(Calendar.SECOND, 59)
+         calendar.set(Calendar.MILLISECOND, 999)
+         return calendar.timeInMillis
+     }
 }

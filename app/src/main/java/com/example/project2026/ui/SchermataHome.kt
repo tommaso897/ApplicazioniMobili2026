@@ -440,7 +440,9 @@ fun SchedaSostaAttiva(
                             onClick = { mostraDialogAvviso = true },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555555)),
                             shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.height(34.dp)
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f)
+                                .height(34.dp)
                         ) {
                             Text("AVVISO", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
@@ -451,7 +453,9 @@ fun SchedaSostaAttiva(
                         onClick = { onTerminaClick(costoAttuale) },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF453A)),
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(34.dp)
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(34.dp)
                     ) {
                         Text("TERMINA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }

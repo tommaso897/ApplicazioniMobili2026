@@ -48,13 +48,23 @@ interface SessioneParcheggioDao {
     @Query("SELECT latitudine, longitudine FROM sessioni_parcheggio WHERE latitudine IS NOT NULL")
     fun getCoordinatePerHeatMap(): Flow<List<CoordinateHeatmap>>
 
-    // Query per CHART COSTI (usando la classe di supporto e alias espliciti)
-    @Query("""
-        SELECT v.nome as nome, SUM(s.costo) as totale 
-        FROM sessioni_parcheggio s 
-        JOIN veicoli v ON s.idVeicolo = v.id 
-        WHERE s.costo IS NOT NULL
-        GROUP BY s.idVeicolo
-    """)
-    fun getSpesePerVeicolo(): Flow<List<SpesaVeicolo>>
+     // Query per CHART COSTI (usando la classe di supporto e alias espliciti)
+     @Query("""
+         SELECT v.nome as nome, SUM(s.costo) as totale 
+         FROM sessioni_parcheggio s 
+         JOIN veicoli v ON s.idVeicolo = v.id 
+         WHERE s.costo IS NOT NULL
+         GROUP BY s.idVeicolo
+     """)
+     fun getSpesePerVeicolo(): Flow<List<SpesaVeicolo>>
+
+     // Query per CHART COSTI FILTRATE PER DATA
+     @Query("""
+         SELECT v.nome as nome, SUM(s.costo) as totale 
+         FROM sessioni_parcheggio s 
+         JOIN veicoli v ON s.idVeicolo = v.id 
+         WHERE s.costo IS NOT NULL AND s.inizio >= :dataInizio AND s.inizio <= :dataFine
+         GROUP BY s.idVeicolo
+     """)
+     fun getSpesePerVeicoloFiltratoPerData(dataInizio: Long, dataFine: Long): Flow<List<SpesaVeicolo>>
 }
