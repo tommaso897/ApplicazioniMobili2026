@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project2026.data.AppDatabase
 import com.example.project2026.data.PosizioneSalvata
+import com.example.project2026.geofence.GeofenceManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class PosizioneSalvataViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).posizioneSalvataDao()
+    private val geofenceManager = GeofenceManager(application)
 
     val tutteLePosizioni: StateFlow<List<PosizioneSalvata>> = dao.ottieniTutteLePosizioni()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -31,12 +33,21 @@ class PosizioneSalvataViewModel(application: Application) : AndroidViewModel(app
                     longitudine = lng
                 )
             )
+            geofenceManager.aggiungiGeofence(
+                PosizioneSalvata(
+                    id = id,
+                    nome = nome,
+                    latitudine = lat,
+                    longitudine = lng
+                )
+            )
         }
     }
 
     fun eliminaPosizione(posizione: PosizioneSalvata) {
         viewModelScope.launch {
             dao.cancellaPosizione(posizione)
+            geofenceManager.rimuoviGeofence(posizione.id)
         }
     }
 }

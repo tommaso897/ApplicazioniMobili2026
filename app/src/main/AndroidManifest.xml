@@ -13,7 +13,9 @@
     <!-- Permessi per la fotocamera -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
+    <!-- Geofence -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:name=".ParkMateApplication"
         android:allowBackup="true"
@@ -49,6 +51,11 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+                    android:name=".geofence.GeofenceBroadcastReceiver"
+                    android:enabled="true"
+                    android:exported="true">
+                </receiver>
         <!-- FileProvider per le foto della fotocamera -->
         <provider
             android:name="androidx.core.content.FileProvider"

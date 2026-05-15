@@ -3,12 +3,14 @@ package com.example.project2026.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -127,6 +129,11 @@ fun SchermataHome(
         }
     }
 
+
+    val backgroundLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* permesso background concesso o negato, nessuna azione UI necessaria */ }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -138,8 +145,14 @@ fun SchermataHome(
                     cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 15f))
                 }
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+                backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                          }
         }
     }
+
 
     LaunchedEffect(Unit) {
         if (!permessiConcessi) {
@@ -148,6 +161,11 @@ fun SchermataHome(
             val pos = gestorePosizione.ottieniPosizioneAttuale()
             pos?.let {
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 15f))
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+                backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             }
         }
     }
@@ -345,6 +363,8 @@ fun SchedaSostaAttiva(
 ) {
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var mostraDialogAvviso by remember { mutableStateOf(false) }
+    var terminaFontSize by remember { mutableStateOf(11.sp) }
+    var avvisoFontSize by remember { mutableStateOf(11.sp) }
     
     LaunchedEffect(Unit) {
         while (true) {
@@ -442,9 +462,18 @@ fun SchedaSostaAttiva(
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
                                 .fillMaxWidth(0.5f)
-                                .height(34.dp)
+                                .height(34.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                         ) {
-                            Text("AVVISO", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text(
+                                text = "AVVISO",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = avvisoFontSize,
+                                maxLines = 1,
+                                softWrap = false,
+                                onTextLayout = { if (it.hasVisualOverflow) avvisoFontSize = (avvisoFontSize.value * 0.9f).sp }
+                            )
                         }
                     }
                     
@@ -455,9 +484,18 @@ fun SchedaSostaAttiva(
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
-                            .height(34.dp)
+                            .height(34.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                     ) {
-                        Text("TERMINA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Text(
+                            text = "TERMINA",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = terminaFontSize,
+                            maxLines = 1,
+                            softWrap = false,
+                            onTextLayout = { if (it.hasVisualOverflow) terminaFontSize = (terminaFontSize.value * 0.9f).sp }
+                        )
                     }
                 }
             }
