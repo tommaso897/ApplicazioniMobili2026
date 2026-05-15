@@ -1,10 +1,7 @@
 package com.example.project2026.ui
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -102,9 +99,6 @@ import com.google.maps.android.compose.rememberMarkerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -262,6 +256,9 @@ fun SchermataGestioneParcheggio(
     var minutiScadenzaStr by remember { mutableStateOf("") }
     var noteStr by remember { mutableStateOf("") }
     var fotoPath by remember { mutableStateOf<String?>(null) }
+    
+    var mostraErrore by remember { mutableStateOf(false) }
+    var messaggioErrore by remember { mutableStateOf("") }
 
     var posizioneScelta by remember { 
         mutableStateOf(LatLng(latIniziale ?: 41.9028, lngIniziale ?: 12.4964)) 
@@ -451,10 +448,17 @@ fun SchermataGestioneParcheggio(
                 OutlinedTextField(
                     value = tariffaStr,
                     onValueChange = { tariffaStr = it },
-                    label = { Text("Tariffa Oraria (€/h)") },
+                    label = { Text("Tariffa Oraria (€/h) *") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    isError = tariffaStr.isEmpty(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
+                        focusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                        errorBorderColor = Color(0xFFFF7878),
+                        errorLabelColor = Color(0xFFFF7878)
+                    )
                 )
             }
             TipoParcheggio.TICKET -> {
@@ -462,18 +466,32 @@ fun SchermataGestioneParcheggio(
                     OutlinedTextField(
                         value = costoStr,
                         onValueChange = { costoStr = it },
-                        label = { Text("Costo Fisso (€)") },
+                        label = { Text("Costo (€) *") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = costoStr.isEmpty(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
+                            focusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                            errorBorderColor = Color(0xFFFF7878),
+                            errorLabelColor = Color(0xFFFF7878)
+                        )
                     )
                     OutlinedTextField(
                         value = minutiScadenzaStr,
                         onValueChange = { minutiScadenzaStr = it },
-                        label = { Text("Durata (minuti)") },
+                        label = { Text("Durata (min) *") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = minutiScadenzaStr.isEmpty(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
+                            focusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                            errorBorderColor = Color(0xFFFF7878),
+                            errorLabelColor = Color(0xFFFF7878)
+                        )
                     )
                 }
             }
@@ -521,20 +539,46 @@ fun SchermataGestioneParcheggio(
 
         Button(
             onClick = {
-                val tariffa = tariffaStr.toDoubleOrNull()
-                val costo = costoStr.toDoubleOrNull()
-                val scadenzaMs = minutiScadenzaStr.toLongOrNull()?.let { System.currentTimeMillis() + (it * 60 * 1000) }
-                
-                onConferma(
-                    tipoSelezionato, 
-                    tariffa, 
-                    scadenzaMs, 
-                    costo, 
-                    posizioneScelta.latitude, 
-                    posizioneScelta.longitude,
-                    noteStr.trim().ifBlank { null },
-                    fotoPath
-                )
+                // Validazione campi obbligatori
+                val errore = when (tipoSelezionato) {
+                    TipoParcheggio.PAID -> {
+                        if (tariffaStr.isEmpty()) {
+                            "La tariffa oraria è obbligatoria per un parcheggio a pagamento"
+                        } else if (tariffaStr.toDoubleOrNull() == null) {
+                            "Inserisci un valore valido per la tariffa oraria"
+                        } else null
+                    }
+                    TipoParcheggio.TICKET -> {
+                        when {
+                            costoStr.isEmpty() -> "Il costo fisso è obbligatorio per un parcheggio a ticket"
+                            costoStr.toDoubleOrNull() == null -> "Inserisci un valore valido per il costo fisso"
+                            minutiScadenzaStr.isEmpty() -> "La durata è obbligatoria per un parcheggio a ticket"
+                            minutiScadenzaStr.toLongOrNull() == null -> "Inserisci un valore valido per la durata"
+                            else -> null
+                        }
+                    }
+                    TipoParcheggio.FREE -> null
+                }
+
+                if (errore != null) {
+                    messaggioErrore = errore
+                    mostraErrore = true
+                } else {
+                    val tariffa = tariffaStr.toDoubleOrNull()
+                    val costo = costoStr.toDoubleOrNull()
+                    val scadenzaMs = minutiScadenzaStr.toLongOrNull()?.let { System.currentTimeMillis() + (it * 60 * 1000) }
+                    
+                    onConferma(
+                        tipoSelezionato, 
+                        tariffa, 
+                        scadenzaMs, 
+                        costo, 
+                        posizioneScelta.latitude, 
+                        posizioneScelta.longitude,
+                        noteStr.trim().ifBlank { null },
+                        fotoPath
+                    )
+                }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
@@ -580,6 +624,37 @@ fun SchermataGestioneParcheggio(
                     onClick = { mostraDialogFoto = false }
                 ) {
                     Text("No")
+                }
+            }
+        )
+    }
+
+    // Dialog di errore validazione
+    if (mostraErrore) {
+        AlertDialog(
+            onDismissRequest = { mostraErrore = false },
+            title = { Text("Errore Validazione", color = Color(0xFFFF7878)) },
+            text = { 
+                Column {
+                    Text(
+                        "I seguenti campi sono obbligatori:",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        messaggioErrore,
+                        color = Color(0xFFFF7878),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { mostraErrore = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black)
+                ) {
+                    Text("OK")
                 }
             }
         )
