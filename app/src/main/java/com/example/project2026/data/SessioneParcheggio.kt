@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "sessioni_parcheggio")
 data class SessioneParcheggio(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "idUtente") val idUtente: Int = 0,
     @ColumnInfo(name = "idVeicolo") val idVeicolo: Int,
     @ColumnInfo(name = "tipo") val tipo: TipoParcheggio,
     @ColumnInfo(name = "latitudine") val latitudine: Double? = null,

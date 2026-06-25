@@ -2,6 +2,7 @@ package com.example.project2026.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+
 @Dao
 interface PosizioneSalvataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -10,6 +11,6 @@ interface PosizioneSalvataDao {
     @Delete
     suspend fun cancellaPosizione(posizione: PosizioneSalvata)
 
-    @Query("SELECT * FROM posizioni_salvate")
-    fun ottieniTutteLePosizioni(): Flow<List<PosizioneSalvata>>
+    @Query("SELECT * FROM posizioni_salvate WHERE idUtente = :idUtente")
+    fun ottieniTutteLePosizioni(idUtente: Int): Flow<List<PosizioneSalvata>>
 }

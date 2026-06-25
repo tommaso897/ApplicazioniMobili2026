@@ -23,20 +23,17 @@ interface SessioneParcheggioDao {
     @Delete
     suspend fun eliminaSessione(sessione: SessioneParcheggio)
 
-    @Query("SELECT * FROM sessioni_parcheggio")
-    fun ottieniTutteLeSessioni(): Flow<List<SessioneParcheggio>>
+    @Query("SELECT * FROM sessioni_parcheggio WHERE idUtente = :idUtente")
+    fun ottieniTutteLeSessioni(idUtente: Int): Flow<List<SessioneParcheggio>>
 
     @Query("SELECT * FROM sessioni_parcheggio WHERE id = :id")
     suspend fun ottieniSessionePerId(id: Int): SessioneParcheggio?
 
-    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1")
-    fun ottieniSessioniAttive(): Flow<List<SessioneParcheggio>>
+    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1 AND idUtente = :idUtente")
+    fun ottieniSessioniAttive(idUtente: Int): Flow<List<SessioneParcheggio>>
 
-    @Query("SELECT * FROM sessioni_parcheggio ORDER BY inizio DESC")
-    fun ottieniCronologia(): Flow<List<SessioneParcheggio>>
-
-    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 0 ORDER BY inizio DESC")
-    fun ottieniCronologiaTerminate(): Flow<List<SessioneParcheggio>>
+    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 0 AND idUtente = :idUtente ORDER BY inizio DESC")
+    fun ottieniCronologiaTerminate(idUtente: Int): Flow<List<SessioneParcheggio>>
 
     @Query("SELECT * FROM sessioni_parcheggio WHERE idVeicolo = :id AND attivo = 1 LIMIT 1")
     suspend fun ottieniSessioneAttivaPerVeicolo(id: Int): SessioneParcheggio?
@@ -45,26 +42,26 @@ interface SessioneParcheggioDao {
     suspend fun terminaSessioneAttivaPerVeicolo(idVeicolo: Int, timestampFine: Long, dataFine: String)
 
     // Query per HEATMAP (usando la classe di supporto)
-    @Query("SELECT latitudine, longitudine FROM sessioni_parcheggio WHERE latitudine IS NOT NULL")
-    fun getCoordinatePerHeatMap(): Flow<List<CoordinateHeatmap>>
+    @Query("SELECT latitudine, longitudine FROM sessioni_parcheggio WHERE latitudine IS NOT NULL AND idUtente = :idUtente")
+    fun getCoordinatePerHeatMap(idUtente: Int): Flow<List<CoordinateHeatmap>>
 
-     // Query per CHART COSTI (usando la classe di supporto e alias espliciti)
-     @Query("""
-         SELECT v.nome as nome, SUM(s.costo) as totale 
-         FROM sessioni_parcheggio s 
-         JOIN veicoli v ON s.idVeicolo = v.id 
-         WHERE s.costo IS NOT NULL
-         GROUP BY s.idVeicolo
-     """)
-     fun getSpesePerVeicolo(): Flow<List<SpesaVeicolo>>
+    // Query per CHART COSTI (usando la classe di supporto e alias espliciti)
+    @Query("""
+        SELECT v.nome as nome, SUM(s.costo) as totale
+        FROM sessioni_parcheggio s
+        JOIN veicoli v ON s.idVeicolo = v.id
+        WHERE s.costo IS NOT NULL AND s.idUtente = :idUtente
+        GROUP BY s.idVeicolo
+    """)
+    fun getSpesePerVeicolo(idUtente: Int): Flow<List<SpesaVeicolo>>
 
-     // Query per CHART COSTI FILTRATE PER DATA
-     @Query("""
-         SELECT v.nome as nome, SUM(s.costo) as totale 
-         FROM sessioni_parcheggio s 
-         JOIN veicoli v ON s.idVeicolo = v.id 
-         WHERE s.costo IS NOT NULL AND s.inizio >= :dataInizio AND s.inizio <= :dataFine
-         GROUP BY s.idVeicolo
-     """)
-     fun getSpesePerVeicoloFiltratoPerData(dataInizio: Long, dataFine: Long): Flow<List<SpesaVeicolo>>
+    // Query per CHART COSTI FILTRATE PER DATA
+    @Query("""
+        SELECT v.nome as nome, SUM(s.costo) as totale
+        FROM sessioni_parcheggio s
+        JOIN veicoli v ON s.idVeicolo = v.id
+        WHERE s.costo IS NOT NULL AND s.idUtente = :idUtente AND s.inizio >= :dataInizio AND s.inizio <= :dataFine
+        GROUP BY s.idVeicolo
+    """)
+    fun getSpesePerVeicoloFiltratoPerData(idUtente: Int, dataInizio: Long, dataFine: Long): Flow<List<SpesaVeicolo>>
 }

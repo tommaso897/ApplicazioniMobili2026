@@ -7,13 +7,14 @@ class Repository(
     private val posizioneDao: PosizioneSalvataDao,
     private val sessioneDao: SessioneParcheggioDao
 ) {
-    //Veicoli
-    val tuttiIVeicoli: Flow<List<Veicolo>> = veicoloDao.ottieniTuttiIVeicoli()
-    suspend fun inserisciVeicolo(veicolo: Veicolo)= veicoloDao.inserisciVeicolo(veicolo)
-    suspend fun cancellaVeicolo(veicolo: Veicolo)= veicoloDao.cancellaVeicolo(veicolo)
-    suspend fun aggiornaVeicolo(veicolo: Veicolo)= veicoloDao.aggiornaVeicolo(veicolo)
-    //Posizioni
-    val tutteLePosizioni: Flow<List<PosizioneSalvata>> = posizioneDao.ottieniTutteLePosizioni()
-    suspend fun inserisciPosizione(posizione: PosizioneSalvata)= posizioneDao.inserisciPosizione(posizione)
+    // Veicoli - filtrati per utente
+    fun tuttiIVeicoli(idUtente: Int): Flow<List<Veicolo>> = veicoloDao.ottieniTuttiIVeicoli(idUtente)
+    suspend fun inserisciVeicolo(veicolo: Veicolo) = veicoloDao.inserisciVeicolo(veicolo)
+    suspend fun cancellaVeicolo(veicolo: Veicolo) = veicoloDao.cancellaVeicolo(veicolo)
+    suspend fun aggiornaVeicolo(veicolo: Veicolo) = veicoloDao.aggiornaVeicolo(veicolo)
 
+    // Posizioni - filtrate per utente
+    fun tutteLePosizioni(idUtente: Int): Flow<List<PosizioneSalvata>> = posizioneDao.ottieniTutteLePosizioni(idUtente)
+    suspend fun inserisciPosizione(posizione: PosizioneSalvata) = posizioneDao.inserisciPosizione(posizione)
+    suspend fun cancellaPosizione(posizione: PosizioneSalvata) = posizioneDao.cancellaPosizione(posizione)
 }

@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -23,24 +22,32 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.project2026.ParkMateApplication
 import com.example.project2026.viewmodel.PosizioneSalvataViewModel
 import com.example.project2026.viewmodel.SessioneViewModel
+import com.example.project2026.viewmodel.UtenteViewModel
 import com.example.project2026.viewmodel.VeicoloViewModel
-import com.example.project2026.viewmodel.VeicoloViewModelFactory
 
 @Composable
 fun NavigazioneApp() {
     val navController = rememberNavController()
-    val context = LocalContext.current
-    val app = context.applicationContext as ParkMateApplication
-    
-    val veicoloViewModel: VeicoloViewModel = viewModel(
-        factory = VeicoloViewModelFactory(app.repository)
-    )
-    
+
+    // ViewModel autenticazione — disponibile ovunque nell'app
+    val utenteViewModel: UtenteViewModel = viewModel()
+
+    // Tutti i ViewModel usano SessionManager.utenteCorrente (flow reattivo):
+    // non serve più passare idUtente come parametro né usare factory personalizzate.
+    val veicoloViewModel: VeicoloViewModel = viewModel()
     val sessioneViewModel: SessioneViewModel = viewModel()
     val posizioneSalvataViewModel: PosizioneSalvataViewModel = viewModel()
+
+    // Schermata iniziale: Home se già loggato, Login altrimenti
+    val startDestination = if (utenteViewModel.sessionManager.isLoggedIn) {
+        Destinazione.Home.rotta
+    } else {
+        Destinazione.Login.rotta
+    }
+
+    val username = utenteViewModel.sessionManager.usernameUtente
 
     val destinazioniPrincipali = listOf(
         Destinazione.Home,
@@ -48,9 +55,10 @@ fun NavigazioneApp() {
         Destinazione.Cronologia,
         Destinazione.Statistiche
     )
-    
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val destinazioneCorrente = navBackStackEntry?.destination?.route
+    val mostraChrome = destinazioneCorrente != Destinazione.Login.rotta
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -68,31 +76,59 @@ fun NavigazioneApp() {
     ) {
         Scaffold(
             topBar = {
-                BarraNavigazioneSuperiore(
-                    onPosizioniSalvateClick = {
-                        navController.navigate(Destinazione.PosizioniSalvate.rotta)
-                    }
-                )
+                if (mostraChrome) {
+                    BarraNavigazioneSuperiore(
+                        onPosizioniSalvateClick = {
+                            navController.navigate(Destinazione.PosizioniSalvate.rotta)
+                        },
+                        username = username,
+                        onLogoutClick = {
+                            // logout() aggiorna SessionManager.utenteCorrente = 0
+                            // → tutti i Flow tornano vuoti automaticamente
+                            utenteViewModel.logout()
+                            navController.navigate(Destinazione.Login.rotta) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    )
+                }
             },
             bottomBar = {
-                BarraNavigazioneInferiore(
-                    destinazioneSelezionata = destinazioniPrincipali.find { it.rotta == destinazioneCorrente }
-                        ?: Destinazione.Home,
-                    onDestinazioneClick = { destinazione ->
-                        navController.navigate(destinazione.rotta) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                if (mostraChrome) {
+                    BarraNavigazioneInferiore(
+                        destinazioneSelezionata = destinazioniPrincipali.find { it.rotta == destinazioneCorrente }
+                            ?: Destinazione.Home,
+                        onDestinazioneClick = { destinazione ->
+                            navController.navigate(destinazione.rotta) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = Destinazione.Home.rotta,
+                startDestination = startDestination,
                 modifier = Modifier.padding(padding)
             ) {
+                // ── LOGIN ────────────────────────────────────────────────
+                composable(Destinazione.Login.rotta) {
+                    SchermataLogin(
+                        utenteViewModel = utenteViewModel,
+                        onLoginSuccess = {
+                            // SessionManager.utenteCorrente è già aggiornato con il nuovo ID.
+                            // Tutti i Flow nei ViewModel si aggiornano automaticamente.
+                            navController.navigate(Destinazione.Home.rotta) {
+                                popUpTo(Destinazione.Login.rotta) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // ── HOME ─────────────────────────────────────────────────
                 composable(Destinazione.Home.rotta) {
                     SchermataHome(
                         sessioneViewModel = sessioneViewModel,
@@ -101,6 +137,7 @@ fun NavigazioneApp() {
                     )
                 }
 
+                // ── LISTA VEICOLI ────────────────────────────────────────
                 composable(Destinazione.ListaVeicoli.rotta) {
                     ListaVeicoliScreen(
                         viewModel = veicoloViewModel,
@@ -115,6 +152,7 @@ fun NavigazioneApp() {
                     )
                 }
 
+                // ── AGGIUNGI VEICOLO ─────────────────────────────────────
                 composable(Destinazione.AggiungiVeicolo.rotta) {
                     VeicoloFormScreen(
                         onIndietro = { navController.popBackStack() },
@@ -122,6 +160,7 @@ fun NavigazioneApp() {
                     )
                 }
 
+                // ── MODIFICA VEICOLO ─────────────────────────────────────
                 composable(
                     route = Destinazione.ModificaVeicolo.rotta,
                     arguments = listOf(navArgument("veicoloId") { type = NavType.IntType })
@@ -142,6 +181,7 @@ fun NavigazioneApp() {
                     }
                 }
 
+                // ── POSIZIONI SALVATE ────────────────────────────────────
                 composable(Destinazione.PosizioniSalvate.rotta) {
                     SchermataPosizioniSalvate(
                         onIndietro = { navController.popBackStack() },
@@ -149,19 +189,19 @@ fun NavigazioneApp() {
                     )
                 }
 
+                // ── CRONOLOGIA ───────────────────────────────────────────
                 composable(Destinazione.Cronologia.rotta) {
                     SchermataHistory(
                         sessioneViewModel = sessioneViewModel,
                         veicoloViewModel = veicoloViewModel
                     )
                 }
-                
 
-
-                composable(Destinazione.Statistiche.rotta){
+                // ── STATISTICHE ──────────────────────────────────────────
+                composable(Destinazione.Statistiche.rotta) {
                     SchermataStats(
-                        sessioneViewModel=sessioneViewModel,
-                        veicoloViewModel=veicoloViewModel
+                        sessioneViewModel = sessioneViewModel,
+                        veicoloViewModel = veicoloViewModel
                     )
                 }
             }

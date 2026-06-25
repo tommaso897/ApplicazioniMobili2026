@@ -6,8 +6,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "veicoli")
 data class Veicolo(
-    @PrimaryKey(autoGenerate = true)val id: Int=0,
-    @ColumnInfo(name = "nome")val nome: String="",
-    @ColumnInfo(name = "tipoVeicolo")val tipoVeicolo: TipoVeicolo,
-    @ColumnInfo(name = "statoParcheggio")val statoParcheggio: StatoParcheggio = StatoParcheggio.LIBERO
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "idUtente") val idUtente: Int = 0,
+    @ColumnInfo(name = "nome") val nome: String = "",
+    @ColumnInfo(name = "tipoVeicolo") val tipoVeicolo: TipoVeicolo,
+    @ColumnInfo(name = "statoParcheggio") val statoParcheggio: StatoParcheggio = StatoParcheggio.LIBERO
 )

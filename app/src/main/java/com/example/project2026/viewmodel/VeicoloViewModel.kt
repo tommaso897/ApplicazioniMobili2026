@@ -1,51 +1,57 @@
 package com.example.project2026.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project2026.data.Repository
+import com.example.project2026.data.AppDatabase
 import com.example.project2026.data.TipoVeicolo
 import com.example.project2026.data.Veicolo
-import com.example.project2026.data.StatoParcheggio
+import com.example.project2026.utility.SessionManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class VeicoloViewModel(private val repository: Repository) : ViewModel() {
-    // Trasformiamo il Flow del database in uno StateFlow che la UI può leggere facilmente
-    val listaVeicoli: StateFlow<List<Veicolo>> = repository.tuttiIVeicoli.stateIn(
-        scope=viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
+@OptIn(ExperimentalCoroutinesApi::class)
+class VeicoloViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Funzione per aggiungere un veicolo
+    private val dao = AppDatabase.getDatabase(application).veicoloDao()
+
+    init {
+        // Crea SessionManager per sincronizzare SessionManager.utenteCorrente
+        // con il valore persistito nelle SharedPreferences
+        SessionManager(application)
+    }
+
+    // Lista veicoli REATTIVA: quando utenteCorrente cambia (login/logout)
+    // il flatMapLatest cancella la query precedente e avvia quella nuova
+    val listaVeicoli: StateFlow<List<Veicolo>> = SessionManager.utenteCorrente
+        .flatMapLatest { id -> dao.ottieniTuttiIVeicoli(id) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    /** Aggiunge un veicolo associato all'utente corrente */
     fun aggiungiNuovoVeicolo(nome: String, tipo: TipoVeicolo) {
         viewModelScope.launch {
-            val nuovoVeicolo = Veicolo(nome = nome, tipoVeicolo = tipo)
-            repository.inserisciVeicolo(nuovoVeicolo)
+            val nuovoVeicolo = Veicolo(
+                nome = nome,
+                tipoVeicolo = tipo,
+                idUtente = SessionManager.utenteCorrente.value  // sempre il valore aggiornato
+            )
+            dao.inserisciVeicolo(nuovoVeicolo)
         }
     }
 
-    // Funzione per cancellare un veicolo
     fun eliminaVeicolo(veicolo: Veicolo) {
-        viewModelScope.launch {
-            repository.cancellaVeicolo(veicolo)
-        }
+        viewModelScope.launch { dao.cancellaVeicolo(veicolo) }
     }
 
-    // Funzione per modificare un veicolo
     fun modificaVeicolo(veicolo: Veicolo) {
-        viewModelScope.launch {
-            repository.aggiornaVeicolo(veicolo)
-        }
+        viewModelScope.launch { dao.aggiornaVeicolo(veicolo) }
     }
-
-    // TODO: Implementare in futuro la funzione per cambiare lo stato di parcheggio
-    // fun cambiaStatoParcheggio(veicolo: Veicolo, nuovoStato: StatoParcheggio) {
-    //     viewModelScope.launch {
-    //         val veicoloAggiornato = veicolo.copy(statoParcheggio = nuovoStato)
-    //         repository.aggiornaVeicolo(veicoloAggiornato)
-    //     }
-    // }
 }

@@ -10,11 +10,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VeicoloDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE) // Se esiste già, sovrascrivi
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun inserisciVeicolo(veicolo: Veicolo)
 
-    @Query("SELECT * FROM veicoli")
-    fun ottieniTuttiIVeicoli(): Flow<List<Veicolo>> // Flow permette l'aggiornamento automatico della UI
+    @Query("SELECT * FROM veicoli WHERE idUtente = :idUtente")
+    fun ottieniTuttiIVeicoli(idUtente: Int): Flow<List<Veicolo>>
 
     @Delete
     suspend fun cancellaVeicolo(veicolo: Veicolo)

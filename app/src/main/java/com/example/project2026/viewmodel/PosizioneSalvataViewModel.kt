@@ -6,41 +6,43 @@ import androidx.lifecycle.viewModelScope
 import com.example.project2026.data.AppDatabase
 import com.example.project2026.data.PosizioneSalvata
 import com.example.project2026.geofence.GeofenceManager
+import com.example.project2026.utility.SessionManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PosizioneSalvataViewModel(application: Application) : AndroidViewModel(application) {
+
     private val dao = AppDatabase.getDatabase(application).posizioneSalvataDao()
     private val geofenceManager = GeofenceManager(application)
 
-    val tutteLePosizioni: StateFlow<List<PosizioneSalvata>> = dao.ottieniTutteLePosizioni()
+    init {
+        SessionManager(application)
+    }
+
+    // Lista posizioni REATTIVA: si aggiorna automaticamente al login/logout
+    val tutteLePosizioni: StateFlow<List<PosizioneSalvata>> = SessionManager.utenteCorrente
+        .flatMapLatest { id -> dao.ottieniTutteLePosizioni(id) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
-     * Salva o aggiorna una posizione.
-     * Se l'id è 0 (default), Room ne genererà uno nuovo (Insert).
-     * Se l'id è già presente, Room sovrascriverà i dati (Update via REPLACE).
+     * Salva o aggiorna una posizione associata all'utente corrente.
      */
     fun salvaPosizione(nome: String, lat: Double, lng: Double, id: Int = 0) {
         viewModelScope.launch {
-            dao.inserisciPosizione(
-                PosizioneSalvata(
-                    id = id,
-                    nome = nome,
-                    latitudine = lat,
-                    longitudine = lng
-                )
+            val posizione = PosizioneSalvata(
+                id = id,
+                idUtente = SessionManager.utenteCorrente.value,
+                nome = nome,
+                latitudine = lat,
+                longitudine = lng
             )
-            geofenceManager.aggiungiGeofence(
-                PosizioneSalvata(
-                    id = id,
-                    nome = nome,
-                    latitudine = lat,
-                    longitudine = lng
-                )
-            )
+            dao.inserisciPosizione(posizione)
+            geofenceManager.aggiungiGeofence(posizione)
         }
     }
 
