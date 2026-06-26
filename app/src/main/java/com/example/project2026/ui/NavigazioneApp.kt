@@ -63,10 +63,14 @@ fun NavigazioneApp() {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(0xFF3B82F6),
-            background = Color.Black,
-            surface = Color(0xFF121212),
-            onBackground = Color.White,
-            onSurface = Color.White
+            primaryContainer = Color(0xFF1E3A5F),
+            secondary = Color(0xFF60A5FA),
+            background = Color(0xFF0A0E17),
+            surface = Color(0xFF111827),
+            surfaceVariant = Color(0xFF1F2937),
+            onBackground = Color(0xFFF9FAFB),
+            onSurface = Color(0xFFF9FAFB),
+            outline = Color(0xFF2D3748)
         ),
         typography = Typography(
             bodyLarge = MaterialTheme.typography.bodyLarge.copy(

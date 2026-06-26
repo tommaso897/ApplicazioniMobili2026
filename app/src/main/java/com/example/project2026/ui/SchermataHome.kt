@@ -171,7 +171,7 @@ fun SchermataHome(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.Black)
+        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0E17))
     ) {
         Box(modifier = Modifier.fillMaxWidth().weight(0.45f)) {
             GoogleMap(
@@ -211,16 +211,16 @@ fun SchermataHome(
                     .align(Alignment.TopCenter),
                 shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF1C1C1E).copy(alpha = 0.9f),
-                    unfocusedContainerColor = Color(0xFF1C1C1E).copy(alpha = 0.8f),
-                    focusedBorderColor = Color.Yellow,
-                    unfocusedBorderColor = Color.Gray,
+                    focusedContainerColor = Color(0xFF111827).copy(alpha = 0.95f),
+                    unfocusedContainerColor = Color(0xFF111827).copy(alpha = 0.85f),
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = Color(0xFF2D3748),
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 ),
                 trailingIcon = {
                     IconButton(onClick = { cercaIndirizzo() }) {
-                        Icon(Icons.Default.Search, contentDescription = "Cerca", tint = Color.Yellow)
+                        Icon(Icons.Default.Search, contentDescription = "Cerca", tint = Color(0xFF3B82F6))
                     }
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -235,17 +235,33 @@ fun SchermataHome(
                 .weight(0.55f)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = "SOSTE ATTIVE",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFF3B82F6))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "SOSTE ATTIVE",
+                    color = Color(0xFFF9FAFB),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             if (sessioniAttive.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nessun veicolo in sosta.", color = Color.Gray)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color(0xFF1F2937), modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Nessun veicolo in sosta.", color = Color(0xFF6B7280))
+                    }
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -304,7 +320,7 @@ fun PopUpFineSosta(
 
     AlertDialog(
         onDismissRequest = onAnnulla,
-        containerColor = Color(0xFF1C1C1E),
+        containerColor = Color(0xFF111827),
         title = {
             Text("Fine Sosta", color = Color.White, fontWeight = FontWeight.Bold)
         },
@@ -382,8 +398,9 @@ fun SchedaSostaAttiva(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -394,10 +411,10 @@ fun SchedaSostaAttiva(
                     else -> Icons.Default.DirectionsCar
                 }
                 Box(
-                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2C2C2E)),
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF1F2937)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icona, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(icona, contentDescription = null, tint = Color(0xFF60A5FA), modifier = Modifier.size(24.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
@@ -431,7 +448,14 @@ fun SchedaSostaAttiva(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Column {
-                    Text(text = "PARCHEGGIATO", color = Color(0xFF28CD41), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFF10B981).copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(text = "PARCHEGGIATO", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     
                     when (sessione.tipo) {
@@ -458,8 +482,8 @@ fun SchedaSostaAttiva(
                     if (sessione.tipo == TipoParcheggio.TICKET) {
                         Button(
                             onClick = { mostraDialogAvviso = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555555)),
-                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A5F)),
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
                                 .fillMaxWidth(0.5f)
                                 .height(34.dp),
@@ -480,8 +504,8 @@ fun SchedaSostaAttiva(
                     // Bottone TERMINA
                     Button(
                         onClick = { onTerminaClick(costoAttuale) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF453A)),
-                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .height(34.dp),

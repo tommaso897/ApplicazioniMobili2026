@@ -37,22 +37,17 @@ fun SchermataHistory(
     val cronologia by sessioneViewModel.cronologiaTerminate.collectAsState()
     val veicoli by veicoloViewModel.listaVeicoli.collectAsState()
 
-    // Stato per il filtro selezionato
     var filtroSelezionato by remember { mutableStateOf("TUTTI") }
     val opzioniFiltro = listOf("TUTTI", "LIBERO", "ORARIO", "TICKET")
 
-    // Applichiamo il filtro alla lista
     val cronologiaFiltrata = remember(cronologia, filtroSelezionato) {
-        if (filtroSelezionato == "TUTTI") {
-            cronologia
-        } else {
-            cronologia.filter { sessione ->
-                when (filtroSelezionato) {
-                    "LIBERO" -> sessione.tipo == TipoParcheggio.FREE
-                    "ORARIO" -> sessione.tipo == TipoParcheggio.PAID
-                    "TICKET" -> sessione.tipo == TipoParcheggio.TICKET
-                    else -> true
-                }
+        if (filtroSelezionato == "TUTTI") cronologia
+        else cronologia.filter { sessione ->
+            when (filtroSelezionato) {
+                "LIBERO" -> sessione.tipo == TipoParcheggio.FREE
+                "ORARIO" -> sessione.tipo == TipoParcheggio.PAID
+                "TICKET" -> sessione.tipo == TipoParcheggio.TICKET
+                else -> true
             }
         }
     }
@@ -60,22 +55,23 @@ fun SchermataHistory(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp)
+            .background(Color(0xFF0A0E17))
+            .padding(horizontal = 16.dp, vertical = 20.dp)
     ) {
+        // Header
         Text(
             text = "CRONOLOGIA SOSTE",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
+            color = Color(0xFFF9FAFB),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 20.dp)
         )
 
-        // Barra dei FILTRI
+        // Filtri
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             opzioniFiltro.forEach { filtro ->
@@ -83,18 +79,19 @@ fun SchermataHistory(
                 FilterChip(
                     selected = selezionato,
                     onClick = { filtroSelezionato = filtro },
-                    label = { Text(filtro, fontSize = 12.sp) },
+                    label = { Text(filtro, fontSize = 12.sp, fontWeight = if (selezionato) FontWeight.Bold else FontWeight.Normal) },
+                    shape = RoundedCornerShape(20.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        containerColor = Color(0xFF1C1C1E),
-                        labelColor = Color.Gray,
-                        selectedContainerColor = Color.Yellow,
-                        selectedLabelColor = Color.Black
+                        containerColor = Color(0xFF111827),
+                        labelColor = Color(0xFF9CA3AF),
+                        selectedContainerColor = Color(0xFF1E3A5F),
+                        selectedLabelColor = Color(0xFF3B82F6)
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = selezionato,
-                        borderColor = Color.DarkGray,
-                        selectedBorderColor = Color.Yellow
+                        borderColor = Color(0xFF2D3748),
+                        selectedBorderColor = Color(0xFF3B82F6)
                     )
                 )
             }
@@ -102,14 +99,19 @@ fun SchermataHistory(
 
         if (cronologiaFiltrata.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = if (filtroSelezionato == "TUTTI") "Nessuna sosta archiviata." 
-                          else "Nessuna sosta di tipo $filtroSelezionato.", 
-                    color = Color.Gray
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF374151), modifier = Modifier.size(56.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = if (filtroSelezionato == "TUTTI") "Nessuna sosta archiviata."
+                               else "Nessuna sosta di tipo $filtroSelezionato.",
+                        color = Color(0xFF6B7280),
+                        fontSize = 15.sp
+                    )
+                }
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(cronologiaFiltrata) { sessione ->
                     val veicolo = veicoli.find { it.id == sessione.idVeicolo }
                     SchedaHistory(
@@ -152,10 +154,18 @@ fun SchedaHistory(
         }
     }
 
+    // Colore e label del tipo parcheggio
+    val (coloreTipo, labelTipo) = when (sessione.tipo) {
+        TipoParcheggio.FREE -> Color(0xFF10B981) to "LIBERO"
+        TipoParcheggio.PAID -> Color(0xFFF59E0B) to "ORARIO"
+        TipoParcheggio.TICKET -> Color(0xFF3B82F6) to "TICKET"
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -167,80 +177,76 @@ fun SchedaHistory(
                 TipoVeicolo.BICICLETTA -> Icons.Default.DirectionsBike
                 else -> Icons.Default.DirectionsCar
             }
+
+            // Icona veicolo
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF2C2C2E)),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1F2937)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icona, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(icona, contentDescription = null, tint = Color(0xFF60A5FA), modifier = Modifier.size(26.dp))
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     text = nomeVeicolo,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = Color(0xFFF9FAFB),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
-                val etichettaTipo = when(sessione.tipo) {
-                    TipoParcheggio.FREE -> "LIBERO"
-                    TipoParcheggio.PAID -> "ORARIO"
-                    TipoParcheggio.TICKET -> "TICKET"
+
+                // Badge tipo
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(coloreTipo.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = labelTipo,
+                        color = coloreTipo,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                
-                Text(
-                    text = "Tipo: $etichettaTipo",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Yellow,
-                    fontSize = 11.sp
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Place, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Place, contentDescription = null, tint = Color(0xFF6B7280), modifier = Modifier.size(12.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = indirizzoStr,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
+                        color = Color(0xFF6B7280),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Column {
-                    Text(
-                        text = "Inizio: ${sessione.dataInizio}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.LightGray
-                    )
-                    Text(
-                        text = "Fine:   ${sessione.dataFine ?: "-"}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.LightGray
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(text = "▶ ${sessione.dataInizio}", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9CA3AF))
+                    if (sessione.dataFine != null) {
+                        Text(text = "■ ${sessione.dataFine}", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9CA3AF))
+                    }
                 }
             }
 
             if (sessione.costo != null && sessione.costo!! > 0) {
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "${String.format("%.2f", sessione.costo)}€",
+                        text = String.format("%.2f€", sessione.costo),
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        color = Color(0xFFF9FAFB),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
                     )
-                    Text(text = "TOTALE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(text = "TOTALE", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
                 }
             }
         }

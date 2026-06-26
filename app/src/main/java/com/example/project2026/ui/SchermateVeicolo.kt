@@ -147,7 +147,7 @@ fun ListaVeicoliScreen(
     }
 
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = Color(0xFF0A0E17),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAggiungiClick,
@@ -213,7 +213,7 @@ fun ListaVeicoliScreen(
                     veicoloSelezionato = null
                 },
                 sheetState = sheetState,
-                containerColor = Color(0xFF1C1C1E)
+                containerColor = Color(0xFF111827)
             ) {
                 SchermataGestioneParcheggio(
                     veicolo = veicoloSelezionato!!,
@@ -365,8 +365,8 @@ fun SchermataGestioneParcheggio(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF2C2C2E)),
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFF111827)),
             contentAlignment = Alignment.Center
         ) {
             if (mappaPronta) {
@@ -391,7 +391,7 @@ fun SchermataGestioneParcheggio(
                 }
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color.Yellow, modifier = Modifier.size(30.dp))
+                    CircularProgressIndicator(color = Color(0xFF3B82F6), modifier = Modifier.size(30.dp))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Caricamento mappa...", color = Color.Gray, fontSize = 12.sp)
                 }
@@ -414,17 +414,17 @@ fun SchermataGestioneParcheggio(
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
                     unfocusedTextColor = Color.White,
                     focusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.Gray,
-                    focusedBorderColor = Color.Yellow
+                    unfocusedBorderColor = Color(0xFF2D3748),
+                    focusedBorderColor = Color(0xFF3B82F6)
                 ),
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             )
 
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color(0xFF2C2C2E))
+                modifier = Modifier.background(Color(0xFF111827))
             ) {
                 DropdownMenuItem(
                     text = { Text("Nessuna (usa mappa)", color = Color.White) },
@@ -457,11 +457,11 @@ fun SchermataGestioneParcheggio(
                     label = { Text("Tariffa Oraria (€/h) *") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     isError = tariffaStr.isEmpty(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
-                        focusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                        unfocusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF2D3748),
+                        focusedBorderColor = if (tariffaStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF3B82F6),
                         errorBorderColor = Color(0xFFFF7878),
                         errorLabelColor = Color(0xFFFF7878)
                     )
@@ -478,8 +478,8 @@ fun SchermataGestioneParcheggio(
                         shape = RoundedCornerShape(12.dp),
                         isError = costoStr.isEmpty(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
-                            focusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                            unfocusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF2D3748),
+                            focusedBorderColor = if (costoStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF3B82F6),
                             errorBorderColor = Color(0xFFFF7878),
                             errorLabelColor = Color(0xFFFF7878)
                         )
@@ -493,8 +493,8 @@ fun SchermataGestioneParcheggio(
                         shape = RoundedCornerShape(12.dp),
                         isError = minutiScadenzaStr.isEmpty(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color.Gray,
-                            focusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color.Yellow,
+                            unfocusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF2D3748),
+                            focusedBorderColor = if (minutiScadenzaStr.isEmpty()) Color(0xFFFF7878) else Color(0xFF3B82F6),
                             errorBorderColor = Color(0xFFFF7878),
                             errorLabelColor = Color(0xFFFF7878)
                         )
@@ -517,11 +517,11 @@ fun SchermataGestioneParcheggio(
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedTextColor = Color.White,
                 focusedTextColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                focusedBorderColor = Color.Yellow,
+                unfocusedBorderColor = Color(0xFF2D3748),
+                focusedBorderColor = Color(0xFF3B82F6),
                 unfocusedLabelColor = Color.Gray,
-                focusedLabelColor = Color.Yellow,
-                cursorColor = Color.Yellow
+                focusedLabelColor = Color(0xFF3B82F6),
+                cursorColor = Color(0xFF3B82F6)
             )
         )
 
@@ -533,8 +533,8 @@ fun SchermataGestioneParcheggio(
                 mostraDialogFoto = true
             },
             modifier = Modifier.fillMaxWidth().height(48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray, contentColor = Color.White),
-            shape = RoundedCornerShape(12.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A5F), contentColor = Color(0xFF60A5FA)),
+            shape = RoundedCornerShape(14.dp)
         ) {
             Icon(Icons.Default.Camera, contentDescription = "Foto", modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
@@ -588,7 +588,7 @@ fun SchermataGestioneParcheggio(
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Text("CONFERMA SOSTA", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
@@ -658,7 +658,7 @@ fun SchermataGestioneParcheggio(
             confirmButton = {
                 Button(
                     onClick = { mostraErrore = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6), contentColor = Color.White)
                 ) {
                     Text("OK")
                 }
@@ -679,8 +679,9 @@ fun SchedaVeicolo(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable { onIniziaParcheggio(veicolo) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E))
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier
@@ -702,11 +703,11 @@ fun SchedaVeicolo(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF2C2C2E)),
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF1F2937)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icona, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(icona, contentDescription = null, tint = Color(0xFF60A5FA), modifier = Modifier.size(28.dp))
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -726,15 +727,15 @@ fun SchedaVeicolo(
                     )
 
                     val (sfondoStato, testoStato) = when (veicolo.statoParcheggio) {
-                        StatoParcheggio.LIBERO -> Pair(Color(0xFF3A3A3C), "LIBERO")
-                        StatoParcheggio.PARCHEGGIATO -> Pair(Color(0xFF28CD41).copy(alpha = 0.2f), "IN SOSTA")
+                        StatoParcheggio.LIBERO -> Pair(Color(0xFF1F2937), "LIBERO")
+                        StatoParcheggio.PARCHEGGIATO -> Pair(Color(0xFF10B981).copy(alpha = 0.15f), "IN SOSTA")
                     }
-                    val coloreTestoStato = if (veicolo.statoParcheggio == StatoParcheggio.PARCHEGGIATO) Color(0xFF28CD41) else Color.White
+                    val coloreTestoStato = if (veicolo.statoParcheggio == StatoParcheggio.PARCHEGGIATO) Color(0xFF10B981) else Color(0xFF9CA3AF)
 
                     Box(
                         modifier = Modifier
                             .padding(top = 6.dp)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(sfondoStato)
                             .padding(horizontal = 8.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center
@@ -759,7 +760,7 @@ fun SchedaVeicolo(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFDAA520))
+                        .background(Color(0xFF1E3A5F))
                 ) {
                     Icon(
                         Icons.Default.Edit,
@@ -773,7 +774,7 @@ fun SchedaVeicolo(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFF7878))
+                        .background(Color(0xFF7F1D1D))
                 ) {
                     Icon(
                         Icons.Default.Delete,
@@ -817,7 +818,7 @@ fun VeicoloFormScreen(
     val isModifica = veicolo != null
 
     Scaffold(
-        containerColor = Color.Black
+        containerColor = Color(0xFF0A0E17)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -842,7 +843,15 @@ fun VeicoloFormScreen(
                 onValueChange = { nome = it },
                 label = { Text("Nome Veicolo (es. La mia Panda)") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = Color(0xFF2D3748),
+                    focusedLabelColor = Color(0xFF3B82F6),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = Color(0xFF3B82F6)
+                )
             )
 
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -857,7 +866,14 @@ fun VeicoloFormScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF3B82F6),
+                        unfocusedBorderColor = Color(0xFF2D3748),
+                        focusedLabelColor = Color(0xFF3B82F6),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
                     TipoVeicolo.entries.forEach { tipo ->
@@ -885,7 +901,7 @@ fun VeicoloFormScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = nome.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text(if (isModifica) "Salva Modifiche" else "Salva Veicolo", style = MaterialTheme.typography.titleMedium)
             }

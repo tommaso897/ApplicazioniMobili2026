@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -100,7 +103,7 @@ fun SchermataStats(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color(0xFF0A0E17))
     ) {
         // PARTE SUPERIORE: HEATMAP GEOGRAFICA
         Box(
@@ -131,8 +134,8 @@ fun SchermataStats(
             Box(
                 modifier = Modifier
                     .padding(16.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF0D1117).copy(alpha = 0.75f))
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
@@ -156,12 +159,24 @@ fun SchermataStats(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "SPESE PER VEICOLO",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height(18.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFF3B82F6))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "SPESE PER VEICOLO",
+                        color = Color(0xFFF9FAFB),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
                 Text(
                     text = "TOTALE: ${String.format("%.2f", spesaTotale)}€",
                     color = Color.Yellow,
@@ -183,8 +198,8 @@ fun SchermataStats(
                     modifier = Modifier
                         .weight(1f)
                         .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF2C2C2E)),
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF111827)),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -203,7 +218,7 @@ fun SchermataStats(
                             onClick = { mostraDatePickerInizio = true },
                             modifier = Modifier.padding(0.dp)
                         ) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Data inizio", tint = Color.Yellow, modifier = Modifier.height(18.dp))
+                            Icon(Icons.Default.DateRange, contentDescription = "Data inizio", tint = Color(0xFF3B82F6), modifier = Modifier.height(18.dp))
                         }
                     }
                 }
@@ -215,8 +230,8 @@ fun SchermataStats(
                     modifier = Modifier
                         .weight(1f)
                         .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF2C2C2E)),
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF111827)),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -235,7 +250,7 @@ fun SchermataStats(
                             onClick = { mostraDatePickerFine = true },
                             modifier = Modifier.padding(0.dp)
                         ) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Data fine", tint = Color.Yellow, modifier = Modifier.height(18.dp))
+                            Icon(Icons.Default.DateRange, contentDescription = "Data fine", tint = Color(0xFF3B82F6), modifier = Modifier.height(18.dp))
                         }
                     }
                 }
@@ -248,7 +263,11 @@ fun SchermataStats(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Nessun dato di spesa disponibile.", color = Color.Gray)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.BarChart, contentDescription = null, tint = Color(0xFF1F2937), modifier = Modifier.size(56.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Nessun dato di spesa disponibile.", color = Color(0xFF6B7280))
+                    }
                 }
             } else {
                 CartesianChartHost(
@@ -315,7 +334,7 @@ fun DialogSelezionaData(
                     datePickerState.selectedDateMillis?.let { onConferma(it) }
                 }
             ) {
-                Text("OK", color = Color.Yellow, fontWeight = FontWeight.Bold)
+                Text("OK", color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

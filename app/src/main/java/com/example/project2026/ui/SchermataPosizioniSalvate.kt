@@ -41,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -109,7 +110,7 @@ fun SchermataPosizioniSalvate(
     }
 
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = Color(0xFF0A0E17),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -182,7 +183,7 @@ fun SchermataPosizioniSalvate(
                     posizioneDaModificare = null
                 },
                 sheetState = sheetState,
-                containerColor = Color(0xFF1C1C1E)
+                containerColor = Color(0xFF111827)
             ) {
                 FormGestionePosizione(
                     posizioneEsistente = posizioneDaModificare,
@@ -235,8 +236,9 @@ fun SchedaPosizione(posizione: PosizioneSalvata, onDelete: () -> Unit, onEdit: (
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C1C1E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -245,15 +247,15 @@ fun SchedaPosizione(posizione: PosizioneSalvata, onDelete: () -> Unit, onEdit: (
             // Icona PLACE Verde a sinistra
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF28CD41).copy(alpha = 0.1f)),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF10B981).copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.Place, 
                     contentDescription = null, 
-                    tint = Color(0xFF28CD41),
+                    tint = Color(0xFF10B981),
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -282,13 +284,13 @@ fun SchedaPosizione(posizione: PosizioneSalvata, onDelete: () -> Unit, onEdit: (
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 IconButton(
                     onClick = onEdit,
-                    modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFFDAA520))
+                    modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF1E3A5F))
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = Color.White, modifier = Modifier.size(16.dp))
                 }
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFFFF7878))
+                    modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF7F1D1D))
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Elimina", tint = Color.White, modifier = Modifier.size(16.dp))
                 }
@@ -366,7 +368,17 @@ fun FormGestionePosizione(
             onValueChange = { nome = it },
             label = { Text("Nome (es. Casa)") },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color(0xFF1C1C1E),
+                unfocusedContainerColor = Color(0xFF1C1C1E),
+                focusedBorderColor = Color(0xFF3B82F6),
+                unfocusedBorderColor = Color(0xFF2D3748),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color(0xFF3B82F6),
+                unfocusedLabelColor = Color.Gray
+            )
         )
 
         OutlinedTextField(
@@ -374,10 +386,20 @@ fun FormGestionePosizione(
             onValueChange = { cercaQuery = it },
             label = { Text("Cerca indirizzo...") },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color(0xFF1C1C1E),
+                unfocusedContainerColor = Color(0xFF1C1C1E),
+                focusedBorderColor = Color(0xFF3B82F6),
+                unfocusedBorderColor = Color(0xFF2D3748),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color(0xFF3B82F6),
+                unfocusedLabelColor = Color.Gray
+            ),
             trailingIcon = {
                 IconButton(onClick = { cercaIndirizzo() }) {
-                    Icon(Icons.Default.Search, contentDescription = "Cerca", tint = Color.Yellow)
+                    Icon(Icons.Default.Search, contentDescription = "Cerca", tint = Color(0xFF3B82F6))
                 }
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -385,7 +407,7 @@ fun FormGestionePosizione(
         )
 
         Box(
-            modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp)).background(Color.DarkGray)
+            modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF111827))
         ) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
@@ -404,7 +426,7 @@ fun FormGestionePosizione(
             onClick = { if (nome.isNotBlank()) onSalva(nome, posizioneScelta.latitude, posizioneScelta.longitude) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow, contentColor = Color.Black),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             enabled = nome.isNotBlank()
         ) {
             Text(if (posizioneEsistente != null) "SALVA MODIFICHE" else "SALVA POSIZIONE", fontWeight = FontWeight.Bold)
