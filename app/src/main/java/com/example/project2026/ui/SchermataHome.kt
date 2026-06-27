@@ -44,6 +44,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -389,6 +394,8 @@ fun SchedaSostaAttiva(
         }
     }
 
+    var percorsoFotoMostrata by remember { mutableStateOf<String?>(null) }
+
     val diff = if (sessione.tipo == TipoParcheggio.TICKET) (sessione.scadenza ?: 0L) - currentTime else currentTime - sessione.inizio
     val costoAttuale = when (sessione.tipo) {
         TipoParcheggio.PAID -> if (sessione.tariffa != null) ( (currentTime - sessione.inizio) / (1000.0 * 60 * 60)) * sessione.tariffa else 0.0
@@ -417,9 +424,22 @@ fun SchedaSostaAttiva(
                     Icon(icona, contentDescription = null, tint = Color(0xFF60A5FA), modifier = Modifier.size(24.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(text = nomeVeicolo, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text(text = "Sosta ${sessione.tipo.name}", color = Color.Gray, fontSize = 11.sp)
+                }
+                
+                // Pulsante Visualizza Foto in alto a destra se disponibile
+                if (!sessione.foto.isNullOrBlank()) {
+                    IconButton(
+                        onClick = { percorsoFotoMostrata = sessione.foto }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Visualizza Foto",
+                            tint = Color(0xFF60A5FA)
+                        )
+                    }
                 }
             }
 
@@ -538,6 +558,51 @@ fun SchedaSostaAttiva(
             },
             onAnnulla = {
                 mostraDialogAvviso = false
+            }
+        )
+    }
+
+    // Dialog per visualizzare la foto
+    if (percorsoFotoMostrata != null) {
+        val bitmap = remember(percorsoFotoMostrata) {
+            try {
+                BitmapFactory.decodeFile(percorsoFotoMostrata)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { percorsoFotoMostrata = null },
+            containerColor = Color(0xFF111827),
+            title = {
+                Text("Foto del Parcheggio", color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Foto sosta",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp)),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Text("Impossibile caricare l'immagine", color = Color.Red)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { percorsoFotoMostrata = null }) {
+                    Text("CHIUDI", color = Color(0xFF60A5FA), fontWeight = FontWeight.Bold)
+                }
             }
         )
     }
