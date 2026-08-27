@@ -110,11 +110,10 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                 val oraAttuale = System.currentTimeMillis()
 
                 _sessioniAttive.value.forEach { sessione ->
-                    // Controlla scadenza per ticket
                     if (sessione.tipo == TipoParcheggio.TICKET && sessione.scadenza != null) {
                         if (oraAttuale >= (sessione.scadenza ?: Long.MAX_VALUE)) {
                             val veicolo = veicoloDao.ottieniVeicoloPerId(sessione.idVeicolo)
-                            veicolo?.let { parcheggioNotificationManager.mostraNotificaScadenza(it.nome) }
+                            veicolo?.let { parcheggioNotificationManager.mostraNotificaScadenza(it.nome, sessione.id) }
                             terminaParcheggio(sessione)
                         }
                     }
@@ -123,7 +122,7 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                         val veicolo = veicoloDao.ottieniVeicoloPerId(sessione.idVeicolo)
                         veicolo?.let {
                             val tempoRimanente = formattaTempoTrascorso((sessione.scadenza ?: 0L) - oraAttuale)
-                            parcheggioNotificationManager.mostraAvvisoScadenza(it.nome, tempoRimanente)
+                            parcheggioNotificationManager.mostraAvvisoScadenza(it.nome, tempoRimanente, sessione.id)
                         }
                     }
 

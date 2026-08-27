@@ -75,20 +75,25 @@ class ParcheggioNotificationManager(
             .setVibrare(vibrare)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notifica)
+        val notifId = if (sessionId > 0) sessionId else NOTIFICATION_ID
+        notificationManager.notify(notifId, notifica)
     }
 
     /**
      * Elimina la notifica
      */
-    fun eliminaNotifica() {
-        notificationManager.cancel(NOTIFICATION_ID)
+    fun eliminaNotifica(sessionId: Int? = null) {
+        if (sessionId != null) {
+            notificationManager.cancel(sessionId)
+        } else {
+            notificationManager.cancel(NOTIFICATION_ID)
+        }
     }
 
     /**
      * Mostra una notifica di scadenza per parcheggio TICKET
      */
-    fun mostraNotificaScadenza(nomVeicolo: String) {
+    fun mostraNotificaScadenza(nomVeicolo: String, sessionId: Int = 0) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -114,13 +119,14 @@ class ParcheggioNotificationManager(
             .setShowWhen(true)
             .build()
 
-        notificationManager.notify(NOTIFICATION_SCADENZA_ID, notifica)
+        val notifId = if (sessionId > 0) sessionId + 10000 else NOTIFICATION_SCADENZA_ID
+        notificationManager.notify(notifId, notifica)
     }
 
     /**
      * Mostra un avviso di scadenza imminente
      */
-    fun mostraAvvisoScadenza(nomVeicolo: String, tempoRimanente: String) {
+    fun mostraAvvisoScadenza(nomVeicolo: String, tempoRimanente: String, sessionId: Int = 0) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -146,7 +152,8 @@ class ParcheggioNotificationManager(
             .setShowWhen(true)
             .build()
 
-        notificationManager.notify(NOTIFICATION_AVVISO_ID, notifica)
+        val notifId = if (sessionId > 0) sessionId + 20000 else NOTIFICATION_AVVISO_ID
+        notificationManager.notify(notifId, notifica)
     }
 
     /**

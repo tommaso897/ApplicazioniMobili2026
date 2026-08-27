@@ -42,7 +42,8 @@ object GeofenceNotificationHelper {
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        val notifId = geofenceId.toIntOrNull() ?: NOTIFICATION_ID
+        notificationManager.notify(notifId, notification)
     }
 
     private fun creaCanaleNotifica(manager: NotificationManager) {
