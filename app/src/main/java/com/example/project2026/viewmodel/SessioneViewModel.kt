@@ -14,6 +14,7 @@ import com.example.project2026.data.TipoParcheggio
 import com.example.project2026.data.Veicolo
 import com.example.project2026.notification.ParcheggioNotificationManager
 import com.example.project2026.utility.SessionManager
+import com.example.project2026.worker.TicketScadutoWorker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -185,10 +186,17 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
                 stato = StatoParcheggio.PARCHEGGIATO,
                 attivo = true
             )
-            sessioneDao.salvaSessione(nuovaSessione)
+            val idGenerato = sessioneDao.salvaSessione(nuovaSessione)
 
             val veicoloAggiornato = veicolo.copy(statoParcheggio = StatoParcheggio.PARCHEGGIATO)
             veicoloDao.aggiornaVeicolo(veicoloAggiornato)
+
+            // Programma il worker in background per la scadenza del ticket
+            if (tipo == TipoParcheggio.TICKET && scadenza != null) {
+                TicketScadutoWorker.programmaScadenza(
+                    getApplication(), idGenerato.toInt(), scadenza
+                )
+            }
         }
     }
 
@@ -251,6 +259,16 @@ class SessioneViewModel(application: Application) : AndroidViewModel(application
 
     fun programmaAvvisoScadenza(sessioneId: Int, minutiAvviso: Int) {
         prefs.edit().putInt("avviso_minuti_$sessioneId", minutiAvviso).apply()
+
+        // Programma anche un worker in background per l'avviso
+        viewModelScope.launch {
+            val sessione = sessioneDao.ottieniSessionePerId(sessioneId)
+            if (sessione?.scadenza != null) {
+                TicketScadutoWorker.programmaAvviso(
+                    getApplication(), sessioneId, sessione.scadenza, minutiAvviso
+                )
+            }
+        }
     }
 
     private fun deveMonstraAvvisoScadenza(sessione: SessioneParcheggio, oraAttuale: Long): Boolean {

@@ -15,7 +15,7 @@ data class SpesaVeicolo(val nome: String, val totale: Double)
 @Dao
 interface SessioneParcheggioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun salvaSessione(sessione: SessioneParcheggio)
+    suspend fun salvaSessione(sessione: SessioneParcheggio): Long
 
     @Update
     suspend fun aggiornaSessione(sessione: SessioneParcheggio)
@@ -31,6 +31,10 @@ interface SessioneParcheggioDao {
 
     @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1 AND idUtente = :idUtente")
     fun ottieniSessioniAttive(idUtente: Int): Flow<List<SessioneParcheggio>>
+
+    // Query one-shot per il Worker in background (non restituisce un Flow ma direttamente la lista)
+    @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 1")
+    suspend fun ottieniTutteLeSessioniAttive(): List<SessioneParcheggio>
 
     @Query("SELECT * FROM sessioni_parcheggio WHERE attivo = 0 AND idUtente = :idUtente ORDER BY inizio DESC")
     fun ottieniCronologiaTerminate(idUtente: Int): Flow<List<SessioneParcheggio>>

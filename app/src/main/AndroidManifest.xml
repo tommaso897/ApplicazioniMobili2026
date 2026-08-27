@@ -56,6 +56,16 @@
                     android:enabled="true"
                     android:exported="true">
                 </receiver>
+
+        <!-- BroadcastReceiver per ripristinare i geofence al riavvio del telefono -->
+        <receiver
+            android:name=".geofence.BootBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <!-- FileProvider per le foto della fotocamera -->
         <provider
             android:name="androidx.core.content.FileProvider"

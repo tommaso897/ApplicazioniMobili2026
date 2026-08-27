@@ -84,4 +84,7 @@ dependencies {
     implementation("com.patrykandpatrick.vico:compose:2.0.0-alpha.28")
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.28")
     implementation("com.patrykandpatrick.vico:core:2.0.0-alpha.28")
+
+    // WorkManager per il monitoraggio in background
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }
